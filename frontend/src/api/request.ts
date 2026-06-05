@@ -1,6 +1,5 @@
 // Axios 实例 + 拦截器
 import axios from 'axios'
-import type { ApiResponse } from '@/types/api'
 
 const request = axios.create({
   baseURL: import.meta.env.VITE_API_BASE || '/api',
@@ -18,7 +17,7 @@ request.interceptors.request.use((config) => {
 
 // 响应拦截: 解包 + 401 跳转
 request.interceptors.response.use(
-  (res) => res.data as ApiResponse,
+  (res): any => res.data,
   (err) => {
     if (err.response?.status === 401) {
       localStorage.removeItem('token')

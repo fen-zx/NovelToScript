@@ -1,7 +1,7 @@
 # Database Schema — AI小说转剧本工具
 
-> 基于 BackendArchitectureGenerator 输出自动生成
-> 数据库: SQLite | ORM: Prisma | 日期: 2026-06-05
+> 基于 ARCHITECTURE.md 领域模型 + PRD 实体分析重新生成
+> 数据库: SQLite | ORM: Prisma 5.x | 日期: 2026-06-05
 
 ---
 
@@ -23,7 +23,7 @@
 
 ### Novel
 
-**职责**: 小说原文及其元数据
+**职责**: 小说原文元数据（原文内容存 MinIO，不存 DB）
 
 | 字段         | 类型          | 必填 | 说明                   |
 | ------------ | ------------- | ---- | ---------------------- |
@@ -33,9 +33,11 @@
 | author       | String?       |      | 作者 (选填)            |
 | chapterCount | Int           | ✅   | 章节数 (3~100)         |
 | wordCount    | Int           | ✅   | 总字数                 |
-| fileFormat   | FileFormat    | ✅   | 文件格式 (txt/docx/md) |
+| fileFormat   | FileFormat    | ✅   | 文件格式 (TXT/DOCX/MD) |
 | filePath     | String?       |      | MinIO 存储路径         |
 | createdAt    | DateTime      | ✅   | 导入时间               |
+
+> **架构决策**: `rawText` 不存入 DB，原文经 Multer 上传后直接写入 MinIO（`novels/{userId}/{novelId}/original.{ext}`），DB 仅存 `filePath` 元数据。
 
 ### Task
 
@@ -75,7 +77,7 @@
 
 ### Script
 
-**职责**: 剧本主表，关联用户和小说
+**职责**: 剧本主表，关联用户和小说（YAML 内容存 Version 表）
 
 | 字段           | 类型          | 必填 | 说明               |
 | -------------- | ------------- | ---- | ------------------ |
@@ -87,6 +89,8 @@
 | createdAt      | DateTime      | ✅   | 创建时间           |
 | updatedAt      | DateTime      | ✅   | 更新时间           |
 | deletedAt      | DateTime?     |      | 软删除标记         |
+
+> **架构决策**: `content` 不存 Script 表。剧本 YAML 内容按版本快照存储在 Version 表，`currentVersion` 指向最新版本号。
 
 ### Version
 
@@ -216,11 +220,12 @@ User ──────── 1:N ──────── Task
 | `novels`        | userId, createdAt       | `@@index`  | 按用户查询小说列表  |
 | `tasks`         | userId, status          | `@@index`  | 任务列表 + 状态筛选 |
 | `tasks`         | status, createdAt       | `@@index`  | 队列调度查询        |
-| `scripts`       | userId, novelId         | `@@unique` | 用户+小说唯一剧本   |
+| `scripts`       | novelId                 | `@unique`  | 小说唯一剧本 (1:1)  |
 | `scripts`       | deletedAt               | `@@index`  | 软删除过滤          |
 | `versions`      | scriptId, versionNumber | `@@unique` | 版本号在剧本内唯一  |
 | `agent_results` | taskId, agentName       | `@@unique` | 同一任务+Agent 唯一 |
-| `scenes`        | versionId               | `@@index`  | 按版本查询场景      |
+| `characters`    | scriptId                | `@@index`  | 按剧本查询人物      |
+| `scenes`        | versionId, sceneNumber  | `@@index`  | 按版本+序号查询     |
 | `dialogues`     | sceneId, sequence       | `@@index`  | 按场景+序号排序     |
 
 ---
@@ -230,7 +235,7 @@ User ──────── 1:N ──────── Task
 | 约束                                  | 字段                      | 原因                            |
 | ------------------------------------- | ------------------------- | ------------------------------- |
 | `users_account_key`                   | account                   | 账号不可重复                    |
-| `scripts_userId_novelId_key`          | (userId, novelId)         | 同一用户同一小说只有一个剧本    |
+| `scripts_novelId_key`                 | novelId                   | 一部小说只有一个剧本 (1:1)      |
 | `versions_scriptId_versionNumber_key` | (scriptId, versionNumber) | 版本号在剧本内唯一              |
 | `agent_results_taskId_agentName_key`  | (taskId, agentName)       | 同一任务同一 Agent 只有一条结果 |
 
@@ -238,41 +243,38 @@ User ──────── 1:N ──────── Task
 
 ## 八、外键设计
 
-| 子表        | 字段      | 父表    | 父字段 | 删除规则 |
-| ----------- | --------- | ------- | ------ | -------- |
-| Novel       | userId    | User    | id     | Cascade  |
-| Task        | userId    | User    | id     | Cascade  |
-| Task        | novelId   | Novel   | id     | Cascade  |
-| AgentResult | taskId    | Task    | id     | Cascade  |
-| Script      | userId    | User    | id     | Cascade  |
-| Script      | novelId   | Novel   | id     | Restrict |
-| Version     | scriptId  | Script  | id     | Cascade  |
-| Character   | scriptId  | Script  | id     | Cascade  |
-| Scene       | versionId | Version | id     | Cascade  |
-| Dialogue    | sceneId   | Scene   | id     | Cascade  |
+| 子表        | 字段      | 父表    | 父字段 | 删除规则 | 原因                     |
+| ----------- | --------- | ------- | ------ | -------- | ------------------------ |
+| Novel       | userId    | User    | id     | Cascade  | 删用户→删所有小说        |
+| Task        | userId    | User    | id     | Cascade  | 删用户→删所有任务        |
+| Task        | novelId   | Novel   | id     | Cascade  | 删小说→删关联任务        |
+| AgentResult | taskId    | Task    | id     | Cascade  | 删任务→删所有 Agent 结果 |
+| Script      | userId    | User    | id     | Cascade  | 删用户→删所有剧本        |
+| Script      | novelId   | Novel   | id     | Restrict | 小说有剧本时不可删除小说 |
+| Version     | scriptId  | Script  | id     | Cascade  | 删剧本→删所有版本        |
+| Character   | scriptId  | Script  | id     | Cascade  | 删剧本→删所有人物        |
+| Scene       | versionId | Version | id     | Cascade  | 删版本→删所有场景        |
+| Dialogue    | sceneId   | Scene   | id     | Cascade  | 删场景→删所有对白        |
+
+> **Script.novelId 用 Restrict 而非 Cascade**: 防止误删小说导致已生成的剧本丢失（剧本有独立价值，支持软删除恢复）。
 
 ---
 
 ## 九、审计字段
 
-所有业务实体统一包含：
+| 表            | createdAt | updatedAt | deletedAt   |
+| ------------- | --------- | --------- | ----------- |
+| users         | ✅        | ✅        | —           |
+| novels        | ✅        | —         | —           |
+| tasks         | ✅        | ✅        | —           |
+| agent_results | ✅        | —         | —           |
+| scripts       | ✅        | ✅        | ✅ (软删除) |
+| versions      | ✅        | —         | —           |
+| characters    | ✅        | —         | —           |
+| scenes        | ✅        | —         | —           |
+| dialogues     | ✅        | —         | —           |
 
-```prisma
-createdAt DateTime @default(now())
-updatedAt DateTime @updatedAt  // 仅主表
-```
-
-| 表            | createdAt | updatedAt |
-| ------------- | --------- | --------- |
-| users         | ✅        | ✅        |
-| novels        | ✅        | —         |
-| tasks         | ✅        | ✅        |
-| agent_results | ✅        | —         |
-| scripts       | ✅        | ✅        |
-| versions      | ✅        | —         |
-| characters    | ✅        | —         |
-| scenes        | ✅        | —         |
-| dialogues     | ✅        | —         |
+> `updatedAt` 仅主表（User/Task/Script）启用。快照类表（Version/Scene/Dialogue）只追加不更新，无 `updatedAt`。
 
 ---
 
@@ -331,23 +333,25 @@ npx prisma migrate dev --name add_soft_delete # Script.deletedAt
 
 ## 十三、性能优化建议
 
-| #   | 发现                                         | 建议                                      | 优先级 |
-| --- | -------------------------------------------- | ----------------------------------------- | ------ |
-| 1   | Task 列表常按 status + createdAt 联合查询    | `@@index([status, createdAt])`            | High   |
-| 2   | Version 查询 scriptId + versionNumber 是热点 | `@@unique([scriptId, versionNumber])`     | High   |
-| 3   | Script 软删除后查询需过滤 deletedAt          | `@@index([deletedAt])`                    | Medium |
-| 4   | Scene 查询按 versionId + sceneNumber 排序    | `@@index([versionId, sceneNumber])`       | Medium |
-| 5   | SQLite 单写锁可能成为瓶颈                    | 开启 `PRAGMA journal_mode=WAL`            | Medium |
-| 6   | 长文本 content 字段可能导致行溢出            | 考虑大文本分离存储（当前存 MinIO 已规避） | Low    |
+| #   | 发现                                         | 建议                                  | 优先级 |
+| --- | -------------------------------------------- | ------------------------------------- | ------ |
+| 1   | Task 列表常按 status + createdAt 联合查询    | `@@index([status, createdAt])`        | High   |
+| 2   | Version 查询 scriptId + versionNumber 是热点 | `@@unique([scriptId, versionNumber])` | High   |
+| 3   | Script 软删除后查询需过滤 deletedAt          | `@@index([deletedAt])`                | Medium |
+| 4   | Scene 查询按 versionId + sceneNumber 排序    | `@@index([versionId, sceneNumber])`   | Medium |
+| 5   | Character 按剧本查询是热点                   | `@@index([scriptId])` ✅ 已设置       | Medium |
+| 6   | SQLite 单写锁可能成为瓶颈                    | 开启 `PRAGMA journal_mode=WAL`        | Medium |
+| 7   | 长文本 content 字段可能导致行溢出            | 大剧本 content 存 MinIO（当前已规避） | Low    |
 
 ---
 
 ## 十四、风险分析
 
-| 编号     | 风险                                        | 等级      | 建议                                                                                               |
-| -------- | ------------------------------------------- | --------- | -------------------------------------------------------------------------------------------------- |
-| RISK-001 | Script.content 字段过大（YAML 可能 >100KB） | 🟡 Medium | 大剧本 content 存 MinIO，DB 仅存元数据                                                             |
-| RISK-002 | SQLite 并发写入瓶颈（多任务同时 AI 生成）   | 🟡 Medium | 当前并发限制 1 运行 + 3 排队，可控；未来迁移 PostgreSQL                                            |
-| RISK-003 | Version 表无限增长（每次保存创建新版本）    | 🟢 Low    | 单剧本预计 <100 版本，SQLite 单表可达 TB 级                                                        |
-| RISK-004 | 软删除 Script 后关联 Version 查询遗漏       | 🟢 Low    | 查询时统一加 `WHERE deletedAt IS NULL`，封装 Repository 层                                         |
-| RISK-005 | Character 和 Script 的 N:N 关系实际为 1:N   | 🟢 Low    | 当前设计 Character.scriptId 为 1:N，足够满足需求；若未来需要跨剧本复用角色，可通过 extensions 扩展 |
+| 编号     | 风险                                        | 等级      | 建议                                                       |
+| -------- | ------------------------------------------- | --------- | ---------------------------------------------------------- |
+| RISK-001 | Script.content 字段过大（YAML 可能 >100KB） | 🟡 Medium | 大剧本 content 存 MinIO，DB 仅存元数据                     |
+| RISK-002 | SQLite 并发写入瓶颈（多任务同时 AI 生成）   | 🟡 Medium | 当前并发限制 1 运行 + 3 排队，可控；未来迁移 PostgreSQL    |
+| RISK-003 | Version 表无限增长（每次保存创建新版本）    | 🟢 Low    | 单剧本预计 <100 版本，SQLite 单表可达 TB 级                |
+| RISK-004 | 软删除 Script 后关联 Version 查询遗漏       | 🟢 Low    | 查询时统一加 `WHERE deletedAt IS NULL`，封装 Repository 层 |
+| RISK-005 | Novel.onDelete: Cascade 误删关联剧本        | 🟢 Low    | Script.novelId 使用 `onDelete: Restrict`，阻止级联删除     |
+| RISK-006 | 缺少 Character 按 scriptId 查询的索引       | 🟢 Low    | `@@index([scriptId])` 已补充，查询按剧本过滤人物时走索引   |

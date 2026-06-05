@@ -12,21 +12,23 @@
 
 ### 产物清单
 
-| 产物          | 路径                                 | 状态                         |
-| ------------- | ------------------------------------ | ---------------------------- | --- | ---------- | ------------------------------ | ------------------ |
-| PRD 需求文档  | `docs/prem/PRD.md`                   | ✅ 完成（14 问全部确认）     |
-| 系统设计      | `docs/prem/DESIGN.md`                | ✅ 完成                      |
-| 架构决策      | `docs/prem/DECISIONS.md`             | ✅ 完成（14 条 D-001~D-014） |
-| 页面规格      | `docs/prem/PAGE_SPECS.md`            | ✅ 完成                      |
-| API 规格      | `docs/prem/API_SPECS.md`             | ✅ 完成（17 个接口）         |
-| 页面设计      | `docs/prem/PAGE_DESIGN.md`           | ✅ 完成（7 页完整设计）      |
-| 布局评审      | `docs/prem/LAYOUT_REVIEW.md`         | ✅ 完成（79/100）            |
-| 低保真原型    | `docs/prem/LOWFI_PROTOTYPE.md`       | ✅ 完成                      |
-| HTML 原型     | `prototype/index.html`               | ✅ 完成（毛玻璃风格）        |
-| 后端架构      | `docs/prem/ARCHITECTURE.md`          | ✅ 完成（18 章节）           |     | 数据库设计 | `docs/prem/DATABASE_SCHEMA.md` | ✅ 完成（14 章节） |
-| Prisma Schema | `prisma/schema.prisma`               | ✅ 完成（9 表 + 4 枚举）     |     | 组件方案   | `docs/prem/COMPONENT_SPECS.md` | ✅ 完成（43 组件） |
-| 实现蓝图      | `docs/prem/PAGE_IMPLEMENTATION.md`   | ✅ 完成（7页路由+数据流）    |
-| 前端架构      | `docs/prem/FRONTEND_ARCHITECTURE.md` | ✅ 完成（16 章节）           |
+| 产物          | 路径                                 | 状态                            |
+| ------------- | ------------------------------------ | ------------------------------- |
+| PRD 需求文档  | `docs/prem/PRD.md`                   | ✅ 完成（14 问全部确认）        |
+| 系统设计      | `docs/prem/DESIGN.md`                | ✅ 完成                         |
+| 架构决策      | `docs/prem/DECISIONS.md`             | ✅ 完成（14 条 D-001~D-014）    |
+| 页面规格      | `docs/prem/PAGE_SPECS.md`            | ✅ 完成                         |
+| API 规格      | `docs/prem/API_SPECS.md`             | ✅ 完成（17 个接口）            |
+| 页面设计      | `docs/prem/PAGE_DESIGN.md`           | ✅ 完成（7 页完整设计）         |
+| 布局评审      | `docs/prem/LAYOUT_REVIEW.md`         | ✅ 完成（79/100）               |
+| 低保真原型    | `docs/prem/LOWFI_PROTOTYPE.md`       | ✅ 完成                         |
+| HTML 原型     | `prototype/index.html`               | ✅ 完成（毛玻璃风格）           |
+| 后端架构      | `docs/prem/ARCHITECTURE.md`          | ✅ 完成（18 章节 + 前后端同步） |
+| 数据库设计    | `docs/prem/DATABASE_SCHEMA.md`       | ✅ 完成（14 章节）              |
+| Prisma Schema | `prisma/schema.prisma`               | ✅ 完成（9 表 + 4 枚举）        |
+| 组件方案      | `docs/prem/COMPONENT_SPECS.md`       | ✅ 完成（43 组件）              |
+| 实现蓝图      | `docs/prem/PAGE_IMPLEMENTATION.md`   | ✅ 完成（7页路由+数据流）       |
+| 前端架构      | `docs/prem/FRONTEND_ARCHITECTURE.md` | ✅ 完成（16 章节）              |
 
 ---
 

@@ -7,25 +7,27 @@
 
 ## 1. 接口清单总览
 
-| 编号 | 名称        | 方法 | 路径                           | 用途                 |
-| ---- | ----------- | ---- | ------------------------------ | -------------------- |
-| A0a  | 用户注册    | POST | `/api/auth/register`           | 新用户注册           |
-| A0b  | 用户登录    | POST | `/api/auth/login`              | 账号密码登录         |
-| A0c  | 密码重置    | POST | `/api/auth/reset-password`     | 用户名验证后重置     |
-| A1   | 导入小说    | POST | `/api/novels/import`           | 上传小说文件         |
-| A2   | 创建任务    | POST | `/api/tasks`                   | 创建 AI 分析任务     |
-| A3   | 任务列表    | GET  | `/api/tasks`                   | 分页 + 状态筛选      |
-| A4   | 任务详情    | GET  | `/api/tasks/:id`               | 含 Agent 结果        |
-| A5   | 任务进度流  | GET  | `/api/tasks/:id/stream`        | SSE 实时推送         |
-| A6   | 获取剧本    | GET  | `/api/scripts/:id`             | 当前版本+人物列表    |
-| A7   | 更新剧本    | PUT  | `/api/scripts/:id`             | 保存 + 创建新版本    |
-| A8   | AI 润色     | POST | `/api/scripts/:id/polish`      | 7 种风格可选         |
-| A9   | 获取 Schema | GET  | `/api/schema`                  | YAML Schema 定义     |
-| A10  | 重试任务    | POST | `/api/tasks/:id/retry`         | 断点/从头重试        |
-| A11  | 版本列表    | GET  | `/api/scripts/:id/versions`    | 历史版本摘要         |
-| A12  | 版本详情    | GET  | `/api/scripts/:id/versions/:v` | 指定版本完整内容     |
-| A13  | 版本回滚    | POST | `/api/scripts/:id/rollback`    | 回滚到指定版本       |
-| A14  | 导出剧本    | GET  | `/api/scripts/:id/export`      | yaml/json/md/txt/pdf |
+| 编号 | 名称           | 方法   | 路径                           | 用途                 |
+| ---- | -------------- | ------ | ------------------------------ | -------------------- |
+| A0a  | 用户注册       | POST   | `/api/auth/register`           | 新用户注册           |
+| A0b  | 用户登录       | POST   | `/api/auth/login`              | 账号密码登录         |
+| A0c  | 密码重置       | POST   | `/api/auth/reset-password`     | 用户名验证后重置     |
+| A0d  | 账号可用性检查 | GET    | `/api/auth/register`           | 注册时实时校验       |
+| A1   | 导入小说       | POST   | `/api/novels/import`           | 上传小说文件         |
+| A2   | 创建任务       | POST   | `/api/tasks`                   | 创建 AI 分析任务     |
+| A3   | 任务列表       | GET    | `/api/tasks`                   | 分页 + 状态筛选      |
+| A4   | 任务详情       | GET    | `/api/tasks/:id`               | 含 Agent 结果        |
+| A5   | 任务进度流     | GET    | `/api/tasks/:id/stream`        | SSE 实时推送         |
+| A6   | 获取剧本       | GET    | `/api/scripts/:id`             | 当前版本+人物列表    |
+| A7   | 更新剧本       | PUT    | `/api/scripts/:id`             | 保存 + 创建新版本    |
+| A8   | AI 润色        | POST   | `/api/scripts/:id/polish`      | 7 种风格可选         |
+| A9   | 获取 Schema    | GET    | `/api/schema`                  | YAML Schema 定义     |
+| A10  | 重试任务       | POST   | `/api/tasks/:id/retry`         | 断点/从头重试        |
+| A11  | 版本列表       | GET    | `/api/scripts/:id/versions`    | 历史版本摘要         |
+| A12  | 版本详情       | GET    | `/api/scripts/:id/versions/:v` | 指定版本完整内容     |
+| A13  | 版本回滚       | POST   | `/api/scripts/:id/rollback`    | 回滚到指定版本       |
+| A14  | 导出剧本       | GET    | `/api/scripts/:id/export`      | yaml/json/md/txt/pdf |
+| A15  | 删除任务       | DELETE | `/api/tasks/:id`               | 删除任务及结果       |
 
 ---
 
@@ -104,6 +106,41 @@ POST /api/auth/reset-password
 **响应 200** → `{ "code":0, "message":"密码重置成功", "data":null }`
 
 **错误 404** → `{ "code":2002, "message":"用户名不存在" }`
+
+---
+
+### A0d — 账号可用性检查
+
+```
+GET /api/auth/register?check=account&value=zhangsan
+```
+
+**用途**: 注册表单实时校验账号是否已被占用（防抖 300ms 后调用）
+
+**查询参数**
+
+| 参数    | 类型   | 必填 | 说明                             |
+| ------- | ------ | ---- | -------------------------------- |
+| `check` | string | ✅   | 固定值 `"account"`               |
+| `value` | string | ✅   | 待检查的账号名（字母数字下划线） |
+
+**响应 200**
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "available": true
+  }
+}
+```
+
+| 字段             | 类型      | 说明                         |
+| ---------------- | --------- | ---------------------------- |
+| `data.available` | `boolean` | `true` 可用 / `false` 已占用 |
+
+**说明**: 此接口与 A0a 共用路径 `/api/auth/register`，通过 Query `?check=account` 区分。
 
 ---
 
@@ -413,6 +450,28 @@ GET /api/scripts/:id/export?format=pdf
 - 文本格式: `Content-Type: text/plain` 直接下载
 - PDF: 后端 Puppeteer 渲染，`Content-Type: application/pdf`
 - 文件名: `{title}_剧本_v{version}.{ext}`（Content-Disposition）
+
+---
+
+### A15 — 删除任务
+
+```
+DELETE /api/tasks/:id
+```
+
+**用途**: P3 任务列表的删除操作，物理删除任务及其 AgentResult
+
+**响应 200**
+
+```json
+{
+  "code": 0,
+  "message": "任务已删除",
+  "data": null
+}
+```
+
+**错误 404** → `{ "code":3002, "message":"任务不存在" }`
 
 ---
 

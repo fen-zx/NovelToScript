@@ -1,5 +1,5 @@
 // Prisma Schema — AI小说转剧本工具
-// Database: SQLite | ORM: Prisma 5.x
+// Database: SQLite | ORM: Prisma 7.x
 
 generator client {
     provider = "prisma-client-js"
@@ -7,7 +7,6 @@ generator client {
 
 datasource db {
     provider = "sqlite"
-    url      = env("DATABASE_URL") // file:./dev.db
 }
 
 // ======== ENUMS ========
@@ -74,7 +73,7 @@ model Novel {
 
 model Task {
     id              String     @id @default(cuid())
-    novelId         String
+    novelId         String     @unique
     userId          String
     status          TaskStatus @default(QUEUED)
     progress        Float      @default(0.0)
@@ -114,7 +113,7 @@ model AgentResult {
 model Script {
     id             String    @id @default(cuid())
     userId         String
-    novelId        String
+    novelId        String    @unique
     title          String
     currentVersion Int       @default(1)
     createdAt      DateTime  @default(now())
@@ -126,7 +125,6 @@ model Script {
     versions   Version[]
     characters Character[]
 
-    @@unique([userId, novelId])
     @@index([deletedAt])
 }
 
@@ -154,6 +152,8 @@ model Character {
     createdAt   DateTime      @default(now())
 
     script Script @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+
+    @@index([scriptId])
 }
 
 model Scene {
