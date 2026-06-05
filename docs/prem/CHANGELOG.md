@@ -212,12 +212,63 @@
 ### 📄 页面实现蓝图
 
 - **文档**: 新建 `PAGE_IMPLEMENTATION.md` — 基于 PageGenerator
-- **内容覆盖**:
-  - 完整路由配置（7 页面 + AuthGuard + 懒加载）
-  - 每页目录结构 + 状态管理决策 + 数据流 ASCII 图
-  - P2/P3/P4/P5 四个核心 Composable 伪代码
-  - Pinia Store 详细设计（auth/notification/theme）
-  - 全局开发顺序（12 阶段）
-  - P0~P6 容器伪代码示例
+- **内容**: 路由配置 + 7 页状态管理 + Composable 伪代码 + 12 阶段开发顺序
 - **影响**: 前端开发
 - **级别**: major
+
+### 🏗️ 前端架构设计
+
+- **文档**: 新建 `FRONTEND_ARCHITECTURE.md`
+- **内容**: 16 章节 — 目录结构/组件分层/路由/状态管理/API层/Hook架构/数据流/权限/表单/错误处理/上传/SSE/性能/工程规范
+- **影响**: 前端架构
+- **级别**: major
+
+### 🚀 前端项目初始化
+
+- **项目**: Vite + Vue 3 + TypeScript 脚手架创建
+- **依赖**: Element Plus + Pinia + Vue Router + Axios + Sass
+- **已生成**:
+  - 4 个类型文件 (`types/api/task/script/novel.ts`)
+  - 7 个 API 模块 (`api/request/auth/novels/tasks/tasksSSE/scripts/schema.ts`)
+  - 3 个 Pinia Store (`stores/auth/notification/theme.ts`)
+  - 路由配置 (`router/index.ts` + AuthGuard)
+  - 2 个全局 Hooks (`hooks/useSSE/useCache.ts`)
+  - 全局组件占位 (`AppLayout/NotificationCenter/ThemeToggle.vue`)
+  - 入口文件 (`main.ts` + `App.vue` + `vite.config.ts`)
+  - 完整 `views/` 目录结构（7 页面）
+- **影响**: 前端项目
+- **级别**: major
+
+### 🧩 全局组件生成
+
+- **文件**: 生成 7 个全局组件 (`frontend/src/components/`)
+- **组件列表**:
+  - `AppLayout.vue` — 桌面布局: 固定侧边栏(180px) + 固定顶栏(50px) + 主内容区
+  - `AppLayoutMobile.vue` — 移动布局: 底部 Tab + 抽屉菜单
+  - `CacheIndicator.vue` — 缓存状态指示 (🔒已开启/🔓离线/🔄同步中)
+  - `NotificationCenter.vue` — 通知中心: 铃铛按钮 + 下拉消息面板
+  - `QueueIndicator.vue` — 队列指示 (运行 X/1 排队 Y/3)
+  - `TaskStatusTag.vue` — 任务状态标签 (el-tag 颜色映射)
+  - `ThemeToggle.vue` — 暗色模式切换 (太阳/月亮)
+- **影响**: 前端组件
+- **级别**: major
+
+### 📄 页面容器生成 (P0~P6)
+
+- **文件**: 生成全部 7 个页面 Vue 容器 (`frontend/src/views/`)
+- **页面列表**:
+  - `Auth/AuthPage.vue` — P0: Tab 切换登录/注册/重置, 账号唯一性检测, JWT 存储
+  - `Home/HomePage.vue` — P1: 项目概览卡片 + 快速操作 + 最近任务表 (Loading/Error/Empty 三态)
+  - `Import/ImportPage.vue` — P2: 四步导入 (上传→章节识别→元数据→提交), 拖拽+粘贴上传
+  - `Tasks/TaskListPage.vue` — P3: 多选筛选 + 分页 + 重试弹窗 (断点/从头) + 删除确认
+  - `TaskDetail/TaskDetailPage.vue` — P4: SSE 监听 5 事件更新 7 Agent 状态, 完成后激活编辑器
+  - `ScriptEditor/ScriptEditorPage.vue` — P5: 分屏三模式, 30s 自动保存, 导出/润色/版本/回滚
+  - `Schema/SchemaPage.vue` — P6: Schema 树 + 字段表搜索 + 设计原因/示例折叠面板
+- **影响**: 前端页面
+- **级别**: major
+
+### 🔧 P3 TaskListPage 修复
+
+- **修复**: 移除重复 `<script>` 块, `retryMode` ref 统一放入 `<script setup>`
+- **影响**: P3 页面
+- **级别**: patch
