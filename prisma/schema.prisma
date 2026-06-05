@@ -1,0 +1,185 @@
+// Prisma Schema — AI小说转剧本工具
+// Database: SQLite | ORM: Prisma 5.x
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "sqlite"
+    url      = env("DATABASE_URL") // file:./dev.db
+}
+
+// ======== ENUMS ========
+
+enum TaskStatus {
+    QUEUED
+    PROCESSING
+    COMPLETED
+    FAILED
+}
+
+enum AgentStatus {
+    PENDING
+    RUNNING
+    DONE
+    FAILED
+}
+
+enum CharacterRole {
+    PROTAGONIST
+    ANTAGONIST
+    SUPPORTING
+}
+
+enum FileFormat {
+    TXT
+    DOCX
+    MD
+}
+
+// ======== MODELS ========
+
+model User {
+    id           String   @id @default(cuid())
+    username     String
+    account      String   @unique
+    passwordHash String
+    storageUsed  Int      @default(0)
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
+
+    novels  Novel[]
+    tasks   Task[]
+    scripts Script[]
+}
+
+model Novel {
+    id           String     @id @default(cuid())
+    userId       String
+    title        String
+    author       String?
+    chapterCount Int
+    wordCount    Int
+    fileFormat   FileFormat
+    filePath     String?
+    createdAt    DateTime   @default(now())
+
+    user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+    task   Task?
+    script Script?
+
+    @@index([userId, createdAt])
+}
+
+model Task {
+    id              String     @id @default(cuid())
+    novelId         String
+    userId          String
+    status          TaskStatus @default(QUEUED)
+    progress        Float      @default(0.0)
+    currentAgent    String?
+    resumeFromAgent String?
+    retryMode       String?
+    errorMessage    String?
+    startedAt       DateTime?
+    completedAt     DateTime?
+    createdAt       DateTime   @default(now())
+    updatedAt       DateTime   @updatedAt
+
+    user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+    novel        Novel         @relation(fields: [novelId], references: [id], onDelete: Cascade)
+    agentResults AgentResult[]
+
+    @@index([userId, status])
+    @@index([status, createdAt])
+}
+
+model AgentResult {
+    id           String      @id @default(cuid())
+    taskId       String
+    agentName    String
+    status       AgentStatus @default(PENDING)
+    output       String? // JSON string
+    errorMessage String?
+    startedAt    DateTime?
+    completedAt  DateTime?
+    createdAt    DateTime    @default(now())
+
+    task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+    @@unique([taskId, agentName])
+}
+
+model Script {
+    id             String    @id @default(cuid())
+    userId         String
+    novelId        String
+    title          String
+    currentVersion Int       @default(1)
+    createdAt      DateTime  @default(now())
+    updatedAt      DateTime  @updatedAt
+    deletedAt      DateTime? // soft delete
+
+    user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+    novel      Novel       @relation(fields: [novelId], references: [id], onDelete: Restrict)
+    versions   Version[]
+    characters Character[]
+
+    @@unique([userId, novelId])
+    @@index([deletedAt])
+}
+
+model Version {
+    id            String   @id @default(cuid())
+    scriptId      String
+    versionNumber Int
+    content       String // YAML content
+    note          String?
+    createdAt     DateTime @default(now())
+
+    script Script  @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+    scenes Scene[]
+
+    @@unique([scriptId, versionNumber])
+}
+
+model Character {
+    id          String        @id @default(cuid())
+    scriptId    String
+    name        String
+    role        CharacterRole
+    description String?
+    traits      String? // JSON array of traits
+    createdAt   DateTime      @default(now())
+
+    script Script @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+}
+
+model Scene {
+    id           String   @id @default(cuid())
+    versionId    String
+    sceneNumber  Int
+    location     String
+    time         String?
+    participants String? // JSON array of character IDs
+    createdAt    DateTime @default(now())
+
+    version   Version    @relation(fields: [versionId], references: [id], onDelete: Cascade)
+    dialogues Dialogue[]
+
+    @@index([versionId, sceneNumber])
+}
+
+model Dialogue {
+    id        String   @id @default(cuid())
+    sceneId   String
+    speaker   String
+    text      String
+    sequence  Int
+    createdAt DateTime @default(now())
+
+    scene Scene @relation(fields: [sceneId], references: [id], onDelete: Cascade)
+
+    @@index([sceneId, sequence])
+}

@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NovelToScript — AI小说转剧本工具</title>
+<style>
+:root {
+  --bg: linear-gradient(135deg, #e8d5f5 0%, #d5e8f5 30%, #e8f5d5 60%, #f5e8d5 100%);
+  --card: rgba(255,255,255,0.55); --cardHover: rgba(255,255,255,0.72);
+  --text: #303133; --text2: #788;
+  --border: rgba(255,255,255,0.45);
+  --primary: #6c5ce7; --primaryLight: #a29bfe;
+  --success: #00b894; --warning: #fdcb6e; --danger: #e17055;
+  --shadow: 0 8px 32px rgba(0,0,0,.06);
+  --glass: rgba(255,255,255,0.45);
+  --blur: blur(16px);
+  --sidebar-w: 180px; --header-h: 50px;
+}
+.dark {
+  --bg: linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 70%, #1a1a2e 100%);
+  --card: rgba(30,30,55,0.6); --cardHover: rgba(40,40,70,0.75);
+  --text: #e0e0e0; --text2: #888;
+  --border: rgba(255,255,255,0.08);
+  --primary: #a29bfe; --primaryLight: #6c5ce7;
+  --shadow: 0 8px 32px rgba(0,0,0,.25);
+  --glass: rgba(20,20,45,0.55);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Segoe UI',system-ui,sans-serif;
+  background: var(--bg); background-attachment: fixed;
+  color:var(--text); min-height:100vh;
+}
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: -1;
+  background: var(--bg);
+}
+body,button,input,textarea,select { font-size:14px; }
+
+.sidebar, .header { opacity: 0; pointer-events: none; transition: opacity .3s; }
+body.logged-in .sidebar, body.logged-in .header { opacity: 1; pointer-events: auto; }
+
+/* Layout */
+.layout { display:flex; min-height:100vh; }
+.sidebar { width:var(--sidebar-w); background:var(--glass); backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur); border-right:1px solid var(--border); display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; z-index:100; }
+.sidebar .logo { padding:14px 16px; font-size:16px; font-weight:700; border-bottom:1px solid var(--border); color:var(--primary); }
+.sidebar nav { flex:1; padding:8px 0; }
+.sidebar nav a { display:flex; align-items:center; gap:8px; padding:10px 16px; margin:1px 8px; color:var(--text); text-decoration:none; transition:.2s; font-size:13px; border-radius:8px; }
+.sidebar nav a:hover { background:var(--cardHover); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); color:var(--primary); }
+.sidebar nav a.active { background:var(--primary); color:#fff; }
+.header { position:fixed; top:0; left:var(--sidebar-w); right:0; height:var(--header-h); background:var(--glass); backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:flex-end; padding:0 16px; gap:12px; z-index:99; }
+.header .btn-icon { background:var(--glass); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border:1px solid var(--border); border-radius:8px; padding:6px 10px; cursor:pointer; color:var(--text); transition:.2s; }
+.header .btn-icon:hover { background:var(--cardHover); }
+.main { margin-left:0; margin-top:0; padding:20px; flex:1; transition: margin .3s; }
+body.logged-in .main { margin-left:var(--sidebar-w); margin-top:var(--header-h); }
+
+/* Cards */
+.card { background:var(--glass); backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur); border-radius:12px; padding:16px; margin-bottom:12px; box-shadow:var(--shadow); border:1px solid var(--border); transition: transform .2s, box-shadow .2s; }
+.card:hover { transform: translateY(-1px); box-shadow: 0 12px 40px rgba(0,0,0,.08); }
+.card-header { font-weight:600; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; }
+
+/* Buttons */
+.btn { display:inline-flex; align-items:center; gap:4px; padding:8px 18px; border-radius:10px; border:1px solid var(--border); cursor:pointer; background:var(--glass); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); color:var(--text); font-size:13px; transition:.2s; }
+.btn:hover { background:var(--cardHover); transform: translateY(-1px); }
+.btn-pri { background:var(--primary); color:#fff; border-color:var(--primary); }
+.btn-pri:hover { background:var(--primaryLight); }
+.btn-suc { background:var(--success); color:#fff; border-color:var(--success); }
+.btn-dan { background:var(--danger); color:#fff; border-color:var(--danger); }
+.btn-sm { padding:4px 10px; font-size:12px; }
+.btn:disabled { opacity:.5; cursor:not-allowed; }
+
+/* Inputs */
+input, textarea, select { padding:10px 14px; border:1px solid var(--border); border-radius:10px; background:rgba(255,255,255,0.35); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); color:var(--text); width:100%; font-family:inherit; transition:.2s; }
+.dark input, .dark textarea, .dark select { background:rgba(20,20,45,0.4); }
+input:focus, textarea:focus, select:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(108,92,231,0.15); }
+.form-group { margin-bottom:12px; }
+.form-group label { display:block; margin-bottom:4px; font-size:13px; color:var(--text2); }
+
+/* Table */
+table { width:100%; border-collapse:collapse; font-size:13px; }
+th, td { padding:10px 12px; text-align:left; border-bottom:1px solid var(--border); }
+th { color:var(--text2); font-weight:500; font-size:12px; }
+tr:hover td { background:rgba(108,92,231,.06); }
+
+/* Tags */
+.tag { display:inline-block; padding:2px 8px; border-radius:4px; font-size:12px; }
+.tag-suc { background:#e1f3d8; color:var(--success); }
+.tag-pri { background:#d9ecff; color:var(--primary); }
+.tag-dan { background:#fde2e2; color:var(--danger); }
+.tag-war { background:#fdf6ec; color:var(--warning); }
+.dark .tag-suc { background:#1a3a1a; } .dark .tag-pri { background:#1a2a4a; }
+.dark .tag-dan { background:#3a1a1a; } .dark .tag-war { background:#3a3a1a; }
+
+/* Steps */
+.steps { display:flex; gap:0; margin-bottom:16px; }
+.step { flex:1; text-align:center; padding:10px; border-bottom:3px solid var(--border); color:var(--text2); font-size:13px; }
+.step.active { border-color:var(--primary); color:var(--primary); font-weight:600; }
+.step.done { border-color:var(--success); color:var(--success); }
+
+/* Progress */
+.progress { height:6px; background:var(--border); border-radius:3px; overflow:hidden; }
+.progress-bar { height:100%; background:var(--primary); border-radius:3px; transition:width .3s; }
+
+/* Pipeline */
+.pipeline { }
+.pipeline-row { display:flex; align-items:center; padding:8px 12px; border-bottom:1px solid var(--border); gap:12px; font-size:13px; }
+.pipeline-row .icon { width:20px; text-align:center; }
+.pipeline-row .name { flex:1; }
+.pipeline-row .time { color:var(--text2); font-size:12px; min-width:50px; text-align:right; }
+
+/* Split */
+.split { display:flex; gap:0; min-height:400px; }
+.split-left, .split-right { flex:1; border:1px solid var(--border); overflow:auto; }
+.split-left { border-radius:8px 0 0 8px; background:#1e1e1e; color:#d4d4d4; padding:12px; font-family:Consolas,monospace; font-size:13px; line-height:1.6; }
+.split-right { border-radius:0 8px 8px 0; background:var(--card); padding:16px; overflow-y:auto; }
+.split-right h2 { font-size:16px; margin:12px 0 6px; }
+.split-right h3 { font-size:14px; margin:8px 0 4px; }
+
+/* Login */
+.login-wrap { display:flex; align-items:center; justify-content:center; min-height:100vh; }
+.login-card { width:400px; padding:36px; background:var(--glass); backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur); border-radius:20px; border:1px solid var(--border); box-shadow: 0 20px 60px rgba(0,0,0,.08); }
+.login-card h2 { text-align:center; margin-bottom:4px; font-size:22px; }
+.login-card .sub { text-align:center; color:var(--text2); margin-bottom:24px; font-size:13px; }
+.tabs { display:flex; border-bottom:1px solid var(--border); margin-bottom:16px; }
+.tabs span { flex:1; text-align:center; padding:8px; cursor:pointer; font-size:13px; color:var(--text2); border-bottom:2px solid transparent; }
+.tabs span.active { color:var(--primary); border-bottom-color:var(--primary); }
+
+/* Notifications */
+.notif-panel { position:fixed; top:var(--header-h); right:16px; width:300px; background:var(--card); border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,.15); z-index:200; display:none; }
+.notif-panel.show { display:block; }
+.notif-item { padding:10px 14px; border-bottom:1px solid var(--border); font-size:13px; }
+
+/* Empty */
+.empty { text-align:center; padding:40px 0; color:var(--text2); }
+.empty .icon { font-size:40px; margin-bottom:8px; }
+
+/* Tree */
+.tree { font-family:Consolas,monospace; font-size:13px; line-height:1.8; white-space:pre; }
+
+/* Collapse */
+.collapse-header { cursor:pointer; padding:8px 0; font-weight:500; color:var(--primary); }
+
+.hidden { display:none !important; }
+.mt8 { margin-top:8px; } .mt16 { margin-top:16px; }
+.gap8 { display:flex; gap:8px; } .gap12 { display:flex; gap:12px; }
+.flex-between { display:flex; align-items:center; justify-content:space-between; }
+.text-sm { font-size:12px; color:var(--text2); }
+.w-full { width:100%; }
+</style>
+</head>
+<body class="light">
+
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">🎬 NovelToScript</div>
+    <nav>
+      <a href="#" data-page="home" class="active">🏠 首页</a>
+      <a href="#" data-page="import">📥 导入小说</a>
+      <a href="#" data-page="tasks">📋 分析任务</a>
+      <a href="#" data-page="taskdetail">📊 任务详情</a>
+      <a href="#" data-page="editor">✏️ 剧本编辑</a>
+      <a href="#" data-page="schema">📐 Schema</a>
+    </nav>
+  </aside>
+
+  <!-- Header -->
+  <header class="header">
+    <button class="btn-icon" onclick="toggleNotif()" title="通知">🔔</button>
+    <button class="btn-icon" onclick="toggleTheme()" id="themeBtn" title="暗色模式">🌙</button>
+    <span style="font-size:13px">👤 测试用户 ▼</span>
+  </header>
+
+  <!-- Notifications -->
+  <div class="notif-panel" id="notifPanel">
+    <div style="padding:10px 14px;font-weight:600;border-bottom:1px solid var(--border)">消息通知</div>
+    <div class="notif-item">✅ 斗破苍穹 剧本生成完成</div>
+    <div class="notif-item">✨ 凡人修仙传 润色完成</div>
+    <div class="notif-item">❌ 诡秘之主 任务失败</div>
+  </div>
+
+  <!-- Main Content -->
+  <main class="main" id="mainContent"></main>
+</div>
+
+<script>
+// ======== ROUTER ========
+const pages = {};
+let currentPage = 'home';
+
+function reg(name, render) { pages[name] = render; }
+function nav(page) {
+  currentPage = page;
+  if (page === 'login') {
+    document.body.classList.remove('logged-in');
+  } else {
+    document.body.classList.add('logged-in');
+  }
+  document.querySelectorAll('.sidebar nav a').forEach(a => a.classList.toggle('active', a.dataset.page === page));
+  document.getElementById('mainContent').innerHTML = pages[page] ? pages[page]() : '';
+  if (page === 'taskdetail') startPipelineSim();
+}
+
+// ======== UTILS ========
+function tag(t, c) { return `<span class="tag tag-${c}">${t}</span>`; }
+function card(h, b, extra) { return `<div class="card">${extra||''}<div class="card-header">${h}</div>${b}</div>`; }
+
+// ======== THEME ========
+function toggleTheme() {
+  document.body.classList.toggle('dark');
+  document.getElementById('themeBtn').textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
+}
+
+// ======== NOTIFICATIONS ========
+function toggleNotif() { document.getElementById('notifPanel').classList.toggle('show'); }
+
+document.addEventListener('click', function(e) {
+  const a = e.target.closest('.sidebar nav a');
+  if (a) { e.preventDefault(); nav(a.dataset.page); }
+});
+
+// ======== P0: LOGIN ========
+reg('login', () => `
+<div class="login-wrap">
+<div class="card login-card">
+  <h2>🎬 NovelToScript</h2>
+  <div class="sub">AI 小说转剧本工具</div>
+  <div class="tabs">
+    <span class="active" onclick="switchAuthTab('login')">登录</span>
+    <span onclick="switchAuthTab('register')">注册</span>
+    <span onclick="switchAuthTab('reset')">重置密码</span>
+  </div>
+  <div id="authForm">
+    <div class="form-group"><label>账号</label><input placeholder="请输入账号"></div>
+    <div class="form-group"><label>密码</label><input type="password" placeholder="请输入密码"></div>
+    <button class="btn btn-pri w-full" onclick="document.body.classList.add('logged-in');location.hash='home';nav('home')">登 录</button>
+    <div class="text-sm mt8" style="text-align:center;cursor:pointer;color:var(--primary)" onclick="switchAuthTab('register')">没有账号？立即注册 →</div>
+    <div class="text-sm mt8" style="text-align:center;cursor:pointer;color:var(--text2)" onclick="switchAuthTab('reset')">忘记密码？</div>
+  </div>
+</div></div>`);
+
+function switchAuthTab(tab) {
+  const tabs = document.querySelectorAll('.tabs span');
+  tabs.forEach(t => t.classList.toggle('active', t.textContent.includes(tab==='login'?'登录':tab==='register'?'注册':'重置')));
+  const f = document.getElementById('authForm');
+  if (tab === 'login') f.innerHTML = `
+    <div class="form-group"><label>账号</label><input placeholder="请输入账号"></div>
+    <div class="form-group"><label>密码</label><input type="password" placeholder="请输入密码"></div>
+    <button class="btn btn-pri w-full" onclick="document.body.classList.add('logged-in');location.hash='home';nav('home')">登 录</button>
+    <div class="text-sm mt8" style="text-align:center;cursor:pointer;color:var(--primary)" onclick="switchAuthTab('register')">没有账号？立即注册 →</div>`;
+  else if (tab === 'register') f.innerHTML = `
+    <div class="form-group"><label>用户名</label><input placeholder="2-20字"></div>
+    <div class="form-group"><label>账号</label><input placeholder="字母数字下划线"><span class="text-sm">✓ 可用</span></div>
+    <div class="form-group"><label>密码</label><input type="password" placeholder="至少6位"></div>
+    <button class="btn btn-pri w-full" onclick="switchAuthTab('login');alert('注册成功，请登录')">注 册</button>
+    <div class="text-sm mt8" style="text-align:center;cursor:pointer;color:var(--primary)" onclick="switchAuthTab('login')">已有账号？去登录 →</div>`;
+  else f.innerHTML = `
+    <div class="form-group"><label>用户名</label><input placeholder="请输入用户名"></div>
+    <button class="btn btn-pri w-full" onclick="this.nextElementSibling.classList.remove('hidden')">验 证</button>
+    <div class="hidden mt16">
+      <div class="form-group"><label>新密码</label><input type="password" placeholder="新密码至少6位"></div>
+      <button class="btn btn-pri w-full" onclick="switchAuthTab('login');alert('密码重置成功')">提 交</button>
+    </div>
+    <div class="text-sm mt8" style="text-align:center;cursor:pointer;color:var(--primary)" onclick="switchAuthTab('login')">返回登录</div>`;
+}
+
+// ======== P1: HOME ========
+reg('home', () => `
+${card('📊 项目概览','<p>NovelToScript — AI辅助剧本创作</p><p class="text-sm mt8">将您的小说快速转换为结构化剧本初稿，支持 3~100 章长文本处理。</p>')}
+<div class="card">
+  <div class="card-header">🚀 快速操作</div>
+  <div class="gap8"><button class="btn btn-pri" onclick="nav(\'import\')">📥 导入小说</button><button class="btn" onclick="nav(\'tasks\')">📋 查看任务</button></div>
+</div>
+<div class="card">
+  <div class="card-header">📌 最近任务 <span class="text-sm" style="cursor:pointer;color:var(--primary)" onclick="nav(\'tasks\')">查看全部 →</span></div>
+  <table><thead><tr><th>任务名</th><th>状态</th><th>进度</th><th>时间</th><th>操作</th></tr></thead><tbody>
+    <tr><td>斗破苍穹分析</td><td>${tag('完成','suc')}</td><td>100%</td><td>10:30</td><td><a href="#" onclick="nav(\'taskdetail\')" style="color:var(--primary)">查看 →</a></td></tr>
+    <tr><td>凡人修仙传分析</td><td>${tag('进行中','pri')}</td><td><div class="progress"><div class="progress-bar" style="width:45%"></div></div></td><td>11:15</td><td><a href="#" onclick="nav(\'taskdetail\')" style="color:var(--primary)">查看 →</a></td></tr>
+    <tr><td>诡秘之主分析</td><td>${tag('失败','dan')}</td><td>32%</td><td>09:00</td><td><a href="#" onclick="nav(\'taskdetail\')" style="color:var(--primary)">查看 →</a></td></tr>
+  </tbody></table>
+  <div class="empty"><div class="icon">📭</div>暂无任务，<a href="#" onclick="nav('import')" style="color:var(--primary)">去导入小说 →</a></div>
+</div>`);
+
+// ======== P2: IMPORT ========
+reg('import', () => `
+<div class="steps"><div class="step active">① 上传</div><div class="step">② 章节识别</div><div class="step">③ 元数据</div><div class="step">④ 确认</div></div>
+<div class="card">
+  <div class="card-header">Step 1: 上传文件</div>
+  <div style="border:2px dashed var(--border);border-radius:8px;padding:40px;text-align:center;cursor:pointer" onclick="advanceStep()">
+    <div style="font-size:32px">📁</div>
+    <p>拖拽文件到此处或点击上传</p>
+    <p class="text-sm">支持 .txt .docx .md 单文件 ≤ 20MB</p>
+  </div>
+  <p style="text-align:center;margin-top:8px;color:var(--text2)">或粘贴文本:</p>
+  <textarea rows="4" placeholder="或在此粘贴小说文本..." style="margin-top:4px"></textarea>
+</div>
+<div class="card hidden" id="step2Card">
+  <div class="card-header">Step 2: 章节识别 <span class="text-sm">策略: 规则匹配 ✓ | 命中率: 92%</span></div>
+  <p>识别到 <b>24 章</b></p>
+  <div class="collapse-header" onclick="this.nextElementSibling.classList.toggle('hidden')">展开内置规则 ▲</div>
+  <div class="hidden text-sm mt8">
+    <div>☑ ^第[零一二三四五六七八九十百千万两\\d]+章.*$</div>
+    <div>☑ ^第[零一二三四五六七八九十百千万两\\d]+回.*$</div>
+    <div>☑ ^Chapter\\s+\\d+.*$</div>
+  </div>
+  <div class="gap8 mt8"><input placeholder="自定义正则 如: ^\\【.*\\】$" style="flex:1"><button class="btn btn-sm">+ 添加</button></div>
+  <button class="btn mt8" onclick="alert('章节预览弹窗 — 可拖拽排序/合并/拆分')">📋 章节预览</button>
+</div>
+<div class="card hidden" id="step3Card">
+  <div class="card-header">Step 3: 元数据</div>
+  <div class="form-group"><label>书名 *</label><input placeholder="请输入书名"></div>
+  <div class="form-group"><label>作者</label><input placeholder="请输入作者（选填）"></div>
+</div>
+<div class="flex-between mt16">
+  <span class="text-sm">总字数: 12.5 万字</span>
+  <button class="btn btn-pri" onclick="alert('任务创建成功！');nav('taskdetail')">创建分析任务</button>
+</div>`);
+
+function advanceStep() {
+  const steps = document.querySelectorAll('.step');
+  steps[0].classList.replace('active','done');
+  steps[1].classList.add('active');
+  document.getElementById('step2Card').classList.remove('hidden');
+  document.getElementById('step3Card').classList.remove('hidden');
+  steps[2].classList.add('active');
+}
+
+// ======== P3: TASKS ========
+reg('tasks', () => `
+<div class="card flex-between">
+  <span style="font-weight:600">📋 分析任务</span>
+  <div class="gap12"><span class="text-sm">队列: 1/3</span><button class="btn btn-pri btn-sm" onclick="nav('import')">+ 新建任务</button></div>
+</div>
+<div class="card"><div class="gap8">
+  <span class="tag tag-pri" style="cursor:pointer">全部</span>
+  <span class="tag tag-war" style="cursor:pointer">排队中</span>
+  <span class="tag tag-pri" style="cursor:pointer">进行中</span>
+  <span class="tag tag-suc" style="cursor:pointer">已完成</span>
+  <span class="tag tag-dan" style="cursor:pointer">失败</span>
+</div></div>
+<div class="card">
+  <table><thead><tr><th>任务名</th><th>状态</th><th>进度</th><th>创建时间</th><th>操作</th></tr></thead><tbody>
+    <tr><td>斗破苍穹</td><td>${tag('完成','suc')}</td><td>100%</td><td>10:30</td><td><a href="#" onclick="nav('taskdetail')" style="color:var(--primary)">查看</a> <a href="#" style="color:var(--danger)" onclick="alert('已删除')">删除</a></td></tr>
+    <tr><td>凡人修仙传</td><td>${tag('进行中','pri')}</td><td><div class="progress"><div class="progress-bar" style="width:45%"></div></div></td><td>11:15</td><td><a href="#" onclick="nav('taskdetail')" style="color:var(--primary)">查看</a></td></tr>
+    <tr><td>诡秘之主</td><td>${tag('失败','dan')}</td><td>32%</td><td>09:00</td><td><a href="#" style="color:var(--primary)" onclick="alert('选择: 断点重试 / 从头开始')">重试</a> <a href="#" style="color:var(--danger)" onclick="alert('已删除')">删除</a></td></tr>
+    <tr><td>遮天</td><td>${tag('排队','war')}</td><td>---</td><td>11:20</td><td><a href="#" style="color:var(--danger)">取消</a></td></tr>
+  </tbody></table>
+  <div class="empty"><div class="icon">📭</div>暂无任务，<a href="#" onclick="nav('import')" style="color:var(--primary)">创建第一个 →</a></div>
+  <div class="flex-between mt8"><span class="text-sm">共 12 条</span><span class="text-sm">&lt; 1 2 3 &gt;</span></div>
+</div>`);
+
+// ======== P4: TASK DETAIL ========
+let pipelineTimer;
+function startPipelineSim() {
+  clearInterval(pipelineTimer);
+  const states = ['done','done','done','running','pending','pending','pending'];
+  const times = ['2.1s','15.8s','42.3s','—','—','—','—'];
+  let idx = 2;
+  pipelineTimer = setInterval(() => {
+    if (idx >= 6) { clearInterval(pipelineTimer); return; }
+    idx++;
+    states[idx] = 'running';
+    times[idx] = '...';
+    if (idx > 3) { states[idx-1] = 'done'; times[idx-1] = (Math.random()*60+10).toFixed(1)+'s'; }
+    refreshPipeline(states, times);
+    if (idx === 6) {
+      setTimeout(() => { states[6]='done'; times[6]='3.2s'; refreshPipeline(states,times);
+        const btn = document.querySelector('#enterEditorBtn');
+        if (btn) { btn.disabled = false; btn.textContent = '进入剧本编辑 →'; btn.classList.add('btn-pri'); }
+      }, 2000);
+    }
+  }, 1500);
+}
+
+function refreshPipeline(states, times) {
+  const el = document.getElementById('pipelineContainer');
+  if (!el) return;
+  const icons = {done:'✅',running:'🔄',pending:'⏳',failed:'❌'};
+  const names = ['Novel Analysis','Character Extract','Plot Extraction','Scene Planning','Script Generation','YAML Validation','Script Polish'];
+  const labels = {done:'已完成',running:'进行中',pending:'等待中',failed:'失败'};
+  el.innerHTML = names.map((n,i) => {
+    const s = states[i];
+    return `<div class="pipeline-row">
+      <span class="icon">${icons[s]}</span><span class="name">${n}</span>
+      <span>${labels[s]}</span>
+      ${s==='running'?`<div class="progress" style="width:80px"><div class="progress-bar" style="width:${i===3?67:(i-3)*15+10}%"></div></div>`:''}
+      <span class="time">${times[i]}</span>
+    </div>`;
+  }).join('');
+}
+
+reg('taskdetail', () => `
+<div class="card">
+  <div style="margin-bottom:8px"><a href="#" onclick="nav('tasks')" style="color:var(--primary);font-size:13px">← 返回任务列表</a></div>
+  <div class="flex-between"><span style="font-weight:600">📊 斗破苍穹分析</span><span>${tag('进行中','pri')} 耗时: 3分24秒</span></div>
+</div>
+<div class="card">
+  <div class="card-header">Agent 流水线</div>
+  <div id="pipelineContainer">
+    <div class="pipeline-row"><span class="icon">✅</span><span class="name">Novel Analysis</span><span>已完成</span><span class="time">2.1s</span></div>
+    <div class="pipeline-row"><span class="icon">✅</span><span class="name">Character Extract</span><span>已完成</span><span class="time">15.8s</span></div>
+    <div class="pipeline-row"><span class="icon">✅</span><span class="name">Plot Extraction</span><span>已完成</span><span class="time">42.3s</span></div>
+    <div class="pipeline-row"><span class="icon">🔄</span><span class="name">Scene Planning</span><span>进行中</span><div class="progress" style="width:80px"><div class="progress-bar" style="width:67%"></div></div><span class="time">...</span></div>
+    <div class="pipeline-row"><span class="icon">⏳</span><span class="name">Script Generation</span><span>等待中</span><span class="time">--</span></div>
+    <div class="pipeline-row"><span class="icon">⏳</span><span class="name">YAML Validation</span><span>等待中</span><span class="time">--</span></div>
+    <div class="pipeline-row"><span class="icon">⏳</span><span class="name">Script Polish</span><span>等待中</span><span class="time">--</span></div>
+  </div>
+</div>
+<div class="card">
+  <div class="card-header">中间结果（点击展开）</div>
+  <div class="collapse-header" onclick="this.nextElementSibling.classList.toggle('hidden')">▶ Novel Analysis: 24章，都市玄幻题材</div>
+  <div class="hidden text-sm mt8" style="background:var(--bg);padding:8px;border-radius:4px">{"chapters":24,"genre":"都市玄幻","themes":["成长","复仇","冒险"]}</div>
+  <div class="collapse-header" onclick="this.nextElementSibling.classList.toggle('hidden')">▶ Character Extract: 主角+配角 18人</div>
+  <div class="hidden text-sm mt8" style="background:var(--bg);padding:8px;border-radius:4px">{"protagonist":"萧炎","supporting":17,"relationships":[{"from":"萧炎","to":"药老","type":"师徒"}]}</div>
+  <div class="collapse-header" onclick="this.nextElementSibling.classList.toggle('hidden')">▶ Plot Extraction: 3条主线+7个冲突点</div>
+  <div class="hidden text-sm mt8" style="background:var(--bg);padding:8px;border-radius:4px">{"mainPlots":["复仇纳兰嫣然","收集异火","对抗魂殿"],"conflicts":7}</div>
+</div>
+<button id="enterEditorBtn" class="btn" disabled style="margin-top:8px" onclick="nav('editor')">⏳ 分析完成后激活</button>
+`);
+
+// ======== P5: EDITOR ========
+reg('editor', () => `
+<div class="flex-between" style="margin-bottom:12px">
+  <div><span style="font-weight:600">✏️ 剧本编辑: 斗破苍穹</span> <span class="tag tag-suc">💾已保存</span> <span class="text-sm">v3</span></div>
+  <div class="gap8">
+    <span class="btn btn-sm" style="cursor:pointer">◐ 分屏</span>
+    <span class="btn btn-sm" style="cursor:pointer">📝 仅编辑</span>
+    <span class="btn btn-sm" style="cursor:pointer">📖 仅预览</span>
+  </div>
+</div>
+<div class="gap8" style="margin-bottom:12px">
+  <button class="btn btn-pri btn-sm">💾 保存</button>
+  <select class="btn btn-sm" style="width:auto"><option>📤 导出 ▼</option><option>YAML</option><option>JSON</option><option>MD</option><option>PDF (Puppeteer)</option><option>PDF (jsPDF快速)</option></select>
+  <select class="btn btn-sm" style="width:auto"><option>✨ 润色 ▼</option><option>原著还原</option><option>影视剧风格</option><option>短剧风格</option><option>动漫风格</option><option>电影风格</option></select>
+  <select class="btn btn-sm" style="width:auto"><option>··· 更多 ▼</option><option>✅ 校验</option><option>📜 版本历史</option></select>
+</div>
+<div class="split">
+  <div class="split-left"><pre>title: 斗破苍穹
+scenes:
+  - scene: 1
+    location: 萧家练武场
+    time: 清晨
+    characters:
+      - 萧炎
+      - 萧媚
+    dialogues:
+      - speaker: 萧炎
+        text: 三年之约, 我必赴!
+      - speaker: 萧媚
+        text: 萧炎哥哥...</pre></div>
+  <div class="split-right">
+    <h2>斗破苍穹</h2>
+    <h3>第一场</h3>
+    <p><b>地点:</b> 萧家练武场</p>
+    <p><b>时间:</b> 清晨</p>
+    <p><b>人物:</b> 萧炎、萧媚</p>
+    <p><b>萧炎:</b> 三年之约, 我必赴!</p>
+    <p><b>萧媚:</b> 萧炎哥哥...</p>
+  </div>
+</div>
+<div class="flex-between mt8">
+  <span style="color:var(--danger)">⚠ Schema校验: 3个错误 (点击跳转)</span>
+  <span class="tag tag-suc">缓存: 🔒 已开启</span>
+</div>`);
+
+// ======== P6: SCHEMA ========
+reg('schema', () => `
+<div class="card">
+  <div class="card-header">📐 YAML Schema <span class="tag tag-pri">v1.0.0</span></div>
+  <input placeholder="🔍 搜索字段名..." class="mt8">
+</div>
+<div class="card">
+  <div class="card-header">Schema 结构</div>
+  <div class="tree">
+script
+ ├─ meta               (元数据)
+ │   ├─ title            string
+ │   ├─ author           string
+ │   └─ source           string
+ ├─ characters         (人物列表)
+ │   └─ [*]
+ │       ├─ name          string
+ │       ├─ role          enum
+ │       └─ desc          string
+ ├─ scenes             (场景列表)
+ │   └─ [*]
+ │       ├─ id            int
+ │       ├─ location      string
+ │       ├─ time          string
+ │       ├─ characters    []
+ │       └─ dialogues     []
+ ├─ extensions         (扩展区, 作者自定义)
+ └─ version              string</div>
+</div>
+<div class="card">
+  <div class="card-header">📋 字段说明</div>
+  <table><thead><tr><th>字段</th><th>类型</th><th>必填</th><th>说明</th></tr></thead><tbody>
+    <tr><td>meta.title</td><td>string</td><td>✅</td><td>剧本标题</td></tr>
+    <tr><td>meta.author</td><td>string</td><td></td><td>原作者</td></tr>
+    <tr><td>meta.source</td><td>string</td><td></td><td>原著小说名</td></tr>
+    <tr><td>scenes[].location</td><td>string</td><td>✅</td><td>场景地点</td></tr>
+    <tr><td>scenes[].time</td><td>string</td><td></td><td>场景时间</td></tr>
+    <tr><td>extensions</td><td>object</td><td></td><td>作者自定义扩展区</td></tr>
+  </tbody></table>
+</div>
+<div class="card">
+  <div class="collapse-header" onclick="this.nextElementSibling.classList.toggle('hidden')">💡 设计原因 — 多版本共存 + extensions 扩展区</div>
+  <div class="hidden mt8 text-sm" style="line-height:1.8">
+    <p><b>多版本共存:</b> Schema 通过 version 字段管理版本，旧版本剧本不受新 Schema 影响，确保历史数据的兼容性。</p>
+    <p class="mt8"><b>extensions 扩展区:</b> 在 script 根节点预留 extensions 字段，作者可注入自定义属性以适应不同剧本类型的特殊需求。</p>
+  </div>
+</div>
+<div class="card">
+  <div class="collapse-header" onclick="this.nextElementSibling.classList.toggle('hidden')">📄 示例剧本 [展开 / 收起]</div>
+  <div class="hidden mt8"><pre class="text-sm" style="background:var(--bg);padding:12px;border-radius:4px;overflow-x:auto">script:
+  meta:
+    title: 斗破苍穹
+    author: 天蚕土豆
+    source: 斗破苍穹
+  characters:
+    - name: 萧炎
+      role: protagonist
+      desc: 天才少年，三年之约复仇者
+  scenes:
+    - id: 1
+      location: 萧家练武场
+      time: 清晨
+      characters: [萧炎, 萧媚]
+      dialogues:
+        - speaker: 萧炎
+          text: 三年之约, 我必赴!
+  extensions: {}
+  version: "1.0.0"</pre></div>
+</div>`);
+
+// ======== INIT ========
+// Start on home if hash says so, else show login first
+if (location.hash === '#home') { document.body.classList.add('logged-in'); nav('home'); }
+else { document.body.classList.remove('logged-in'); nav('login'); }
+
+// Click outside to close notif
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#notifPanel') && !e.target.closest('.btn-icon')) {
+    document.getElementById('notifPanel').classList.remove('show');
+  }
+});
+</script>
+</body>
+</html>
