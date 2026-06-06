@@ -2,7 +2,15 @@
 
 ## 2026-06-06
 
-### 📋 任务页 & 剧本编辑器 & 导入流程 多项优化
+### � 退出登录修复 — Pinia store 内 useRouter 不可用
+
+- **问题**: 点击"退出登录"无反应，控制台报 `Cannot read properties of undefined (reading 'push')`
+- **根因**: Pinia store 中 `useRouter()` 返回 `undefined`，无法执行 `router.push('/auth')`
+- **修复**: `auth.ts` logout() 仅清空 token；路由跳转移至 `AppLayout.vue` 组件内 `useRouter()` 调用
+- **影响**: auth.ts, AppLayout.vue
+- **级别**: minor
+
+### �📋 任务页 & 剧本编辑器 & 导入流程 多项优化
 
 - **导入流程**: 文件上传后显示文件名+解锁"下一步"按钮；粘贴文本即显按钮；Step 2~4 加左上角返回按钮
 - **Agent 流水线**: 时间戳 `2026-06-06T04:34:38Z` → `06-06 04:34`；Agent 名汉化；名字/状态/时间 1:1:1 等宽；标题改为"分析进度"；进行中用旋转 ⏳ 替代假进度条
