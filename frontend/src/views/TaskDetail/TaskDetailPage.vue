@@ -17,8 +17,30 @@ const agents = ref<AgentState[]>([
   { name: "ScenePlanning", status: "PENDING", time: null, progress: 0 },
   { name: "ScriptGeneration", status: "PENDING", time: null, progress: 0 },
   { name: "YamlValidation", status: "PENDING", time: null, progress: 0 },
+  { name: "FaithfulnessCheck", status: "PENDING", time: null, progress: 0 },
   { name: "ScriptPolish", status: "PENDING", time: null, progress: 0 },
 ]);
+
+const AGENT_LABELS: Record<string, string> = {
+  NovelAnalysis: "小说解析",
+  CharacterExtraction: "角色提取",
+  PlotAnalysis: "情节分析",
+  ScenePlanning: "场景规划",
+  ScriptGeneration: "剧本生成",
+  YamlValidation: "YAML校验",
+  FaithfulnessCheck: "忠实度校验",
+  ScriptPolish: "剧本润色",
+};
+
+function formatTime(iso: string | null): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mi = String(d.getMinutes()).padStart(2, "0");
+  return `${mm}-${dd} ${hh}:${mi}`;
+}
 const loading = ref(true);
 const error = ref("");
 const scriptId = ref<string | null>(null);
@@ -145,28 +167,24 @@ onUnmounted(() => {
       </el-card>
 
       <el-card class="mb16">
-        <h3>Agent 流水线</h3>
+        <h3>分析进度</h3>
         <div v-for="a in agents" :key="a.name" class="pipeline-row">
           <span class="agent-icon">{{ STATUS_ICONS[a.status] }}</span>
-          <span class="agent-name">{{ a.name }}</span>
-          <span class="agent-status">{{
+          <span class="agent-name">{{ AGENT_LABELS[a.name] || a.name }}</span>
+          <span
+            v-if="a.status === 'RUNNING'"
+            class="agent-status agent-running"
+          >
+            <span class="spin-icon">⏳</span> 进行中
+          </span>
+          <span v-else class="agent-status">{{
             a.status === "DONE"
               ? "已完成"
-              : a.status === "RUNNING"
-                ? "进行中"
-                : a.status === "PENDING"
-                  ? "等待中"
-                  : "失败"
+              : a.status === "PENDING"
+                ? "等待中"
+                : "失败"
           }}</span>
-          <el-progress
-            v-if="a.status === 'RUNNING'"
-            :percentage="a.status === 'RUNNING' ? 67 : 100"
-            :show-text="false"
-            style="width: 80px"
-          />
-          <span class="agent-time">{{
-            a.time || (a.status === "PENDING" ? "—" : "...")
-          }}</span>
+          <span class="agent-time">{{ formatTime(a.time) }}</span>
         </div>
       </el-card>
 
@@ -210,15 +228,31 @@ onUnmounted(() => {
   font-size: 14px;
 }
 .agent-status {
+  flex: 1;
   font-size: 13px;
   color: #909399;
-  width: 60px;
+  text-align: center;
 }
 .agent-time {
+  flex: 1;
   font-size: 12px;
   color: #909399;
-  width: 50px;
   text-align: right;
+}
+.agent-running {
+  color: #409eff !important;
+}
+.spin-icon {
+  display: inline-block;
+  animation: spin 1.5s linear infinite;
+}
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 .empty-state {
   text-align: center;

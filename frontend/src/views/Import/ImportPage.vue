@@ -1,6 +1,6 @@
 <!-- P2 小说导入页 -->
 <script setup lang="ts">
-import { ref, reactive } from "vue";
+import { ref, reactive, computed } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
 import { novelApi } from "@/api/novels";
@@ -18,8 +18,8 @@ const fileInfo = ref<{
   size: number;
 } | null>(null);
 const pasteText = ref("");
-function onFileChange(e: Event) {
-  const file = (e.target as HTMLInputElement).files?.[0];
+function onFileChange(uploadFile: any) {
+  const file = uploadFile.raw as File;
   if (!file) return;
   if (file.size > 20 * 1024 * 1024) {
     ElMessage.error("文件超过 20MB");
@@ -38,21 +38,26 @@ function onFileChange(e: Event) {
       format: ext!,
       size: file.size,
     };
-    step.value = 2;
   };
   reader.readAsText(file);
 }
-function usePasteText() {
-  if (pasteText.value.trim()) {
+function goToStep2() {
+  // 粘贴文本路径：没有 fileInfo 但有 pasteText
+  if (!fileInfo.value && pasteText.value.trim()) {
     fileInfo.value = {
       name: "pasted.txt",
       text: pasteText.value,
       format: "txt",
       size: new Blob([pasteText.value]).size,
     };
+  }
+  if (fileInfo.value && fileInfo.value.text) {
     step.value = 2;
   }
 }
+
+// 下一步按钮可见条件：已上传文件 或 已粘贴文本
+const canNext = computed(() => !!fileInfo.value || !!pasteText.value.trim());
 
 // Step 2: Chapter detection (simplified)
 const chapters = ref<{ title: string; startIndex: number; endIndex: number }[]>(
@@ -110,6 +115,7 @@ async function handleSubmit() {
         drag
         :auto-upload="false"
         :on-change="onFileChange"
+        :on-remove="() => (fileInfo = null)"
         accept=".txt,.docx,.md"
         class="mb16"
       >
@@ -123,14 +129,17 @@ async function handleSubmit() {
         :rows="4"
         placeholder="在此粘贴小说文本..."
       />
-      <el-button class="mt8" @click="usePasteText" :disabled="!pasteText.trim()"
-        >使用粘贴文本</el-button
-      >
+      <el-button v-if="canNext" type="primary" class="mt8" @click="goToStep2">
+        下一步 →
+      </el-button>
     </el-card>
 
     <!-- Step 2 -->
     <el-card v-if="step === 2" class="mb16">
-      <h3>章节识别</h3>
+      <div class="step-header">
+        <el-button type="primary" @click="step = 1">← 上一步</el-button>
+        <h3>章节识别</h3>
+      </div>
       <p v-if="!chapters.length">点击下方按钮开始识别章节</p>
       <el-alert
         v-else
@@ -146,7 +155,10 @@ async function handleSubmit() {
 
     <!-- Step 3 -->
     <el-card v-if="step === 3" class="mb16">
-      <h3>元数据</h3>
+      <div class="step-header">
+        <el-button type="primary" @click="step = 2">← 上一步</el-button>
+        <h3>元数据</h3>
+      </div>
       <el-form label-width="60px">
         <el-form-item label="书名" required
           ><el-input v-model="meta.title" placeholder="请输入书名"
@@ -162,6 +174,9 @@ async function handleSubmit() {
 
     <!-- Step 4 -->
     <div v-if="step === 4" class="text-center">
+      <div class="step-header">
+        <el-button type="primary" @click="step = 3">← 上一步</el-button>
+      </div>
       <p class="mb16">
         确认提交？共
         {{ fileInfo?.size ? (fileInfo.size / 1024).toFixed(1) : 0 }} KB，{{
@@ -183,6 +198,9 @@ async function handleSubmit() {
 <style scoped>
 .import-page {
   width: 100%;
+}
+.step-header {
+  margin-bottom: 12px;
 }
 .mb16 {
   margin-bottom: 16px;

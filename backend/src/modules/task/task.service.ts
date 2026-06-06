@@ -46,7 +46,14 @@ export class TaskService {
   }
 
   async getTaskList(query: { userId: string; status?: string; page?: number; pageSize?: number; sortBy?: any; sortOrder?: any }) {
-    return this.taskRepo.findMany(query)
+    const result = await this.taskRepo.findMany(query)
+    return {
+      ...result,
+      list: result.list.map((t: any) => ({
+        ...t,
+        novelTitle: t.novel?.title ?? "未知",
+      })),
+    }
   }
 
   async getTaskById(taskId: string) {

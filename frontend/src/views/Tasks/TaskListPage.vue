@@ -116,11 +116,12 @@ watch(
       :data="tasks"
       v-loading="loading"
       stripe
+      table-layout="fixed"
       @row-click="(row: TaskSummary) => router.push(`/tasks/${row.id}`)"
       style="cursor: pointer"
     >
-      <el-table-column prop="novelTitle" label="任务名" />
-      <el-table-column label="状态" width="90">
+      <el-table-column prop="novelTitle" label="任务名" align="center" />
+      <el-table-column label="状态" align="center">
         <template #default="{ row }: { row: TaskSummary }">
           <el-tag
             :type="
@@ -146,7 +147,7 @@ watch(
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="进度" width="120">
+      <el-table-column label="进度" align="center">
         <template #default="{ row }: { row: TaskSummary }">
           <el-progress
             v-if="row.status === 'PROCESSING'"
@@ -161,12 +162,12 @@ watch(
           }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="创建时间" width="100">
+      <el-table-column label="创建时间" align="center">
         <template #default="{ row }: { row: TaskSummary }">{{
           new Date(row.createdAt).toLocaleTimeString()
         }}</template>
       </el-table-column>
-      <el-table-column label="操作" width="140">
+      <el-table-column label="操作" align="center">
         <template #default="{ row }: { row: TaskSummary }">
           <el-button
             text
