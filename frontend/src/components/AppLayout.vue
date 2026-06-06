@@ -50,6 +50,15 @@ const navItems = [
   --header-h: clamp(56px, 10vh, 96px);
   display: flex;
   min-height: 100vh;
+  background: #f5f7fa;
+  color: #303133;
+  transition:
+    background 0.3s,
+    color 0.3s;
+}
+.dark .app-layout {
+  background: #1a1a2e;
+  color: #e0e0e0;
 }
 .sidebar {
   width: var(--sidebar-w);
@@ -160,5 +169,14 @@ nav a.active {
   min-height: calc(100vh - var(--header-h));
   font-size: clamp(15px, 1vw, 17px);
   box-sizing: border-box;
+  background: #f5f7fa;
+  color: #303133;
+  transition:
+    background 0.3s,
+    color 0.3s;
+}
+.dark .main {
+  background: #1a1a2e;
+  color: #e0e0e0;
 }
 </style>
