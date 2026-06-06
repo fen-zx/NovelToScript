@@ -5,7 +5,11 @@ const store = useNotificationStore();
 </script>
 
 <template>
-  <div class="notif-wrapper">
+  <div
+    class="notif-wrapper"
+    @mouseenter="store.visible = true"
+    @mouseleave="store.visible = false"
+  >
     <button class="notif-btn" @click="store.toggle()">
       🔔
       <span v-if="store.messages.length" class="badge">{{
@@ -59,7 +63,8 @@ const store = useNotificationStore();
 .notif-panel {
   position: absolute;
   top: 40px;
-  right: 0;
+  left: 50%;
+  transform: translateX(-50%);
   width: 300px;
   max-height: 360px;
   overflow-y: auto;
