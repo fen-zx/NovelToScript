@@ -84,11 +84,20 @@ async function handleSave() {
   }
 }
 
+const exportFileName = ref("");
+
+function openExport() {
+  exportFileName.value = `${title.value}_剧本_v${currentVersion.value}`;
+  exportVisible.value = true;
+}
+
 function handleExport() {
+  const ext = exportFormat.value === "json" ? "json" : exportFormat.value === "md" ? "md" : exportFormat.value === "txt" ? "txt" : "yaml";
+  const mime = exportFormat.value === "json" ? "application/json" : "text/plain";
+  const blob = new Blob([content.value], { type: mime });
   const a = document.createElement("a");
-  const blob = new Blob([content.value], { type: "text/plain" });
   a.href = URL.createObjectURL(blob);
-  a.download = `${title.value}_剧本_v${currentVersion.value}.${exportFormat.value}`;
+  a.download = `${exportFileName.value}.${ext}`;
   a.click();
   exportVisible.value = false;
 }
@@ -198,53 +207,17 @@ function yamlToPreview(yaml: string): string {
           <span class="version">v{{ currentVersion }}</span>
         </div>
         <div class="toolbar-center">
-          <el-radio-group v-model="viewMode" size="small">
+          <el-radio-group v-model="viewMode">
             <el-radio-button value="split">◐ 分屏</el-radio-button>
             <el-radio-button value="editor">📝 仅编辑</el-radio-button>
             <el-radio-button value="preview">📖 仅预览</el-radio-button>
           </el-radio-group>
         </div>
         <div class="toolbar-right">
-          <el-button type="primary" size="small" @click="handleSave"
-            >💾 保存</el-button
-          >
+          <el-button type="primary" @click="handleSave">💾 保存</el-button>
+          <el-button @click="openExport">📤 导出</el-button>
           <el-dropdown>
-            <el-button size="small">📤 导出 ▼</el-button>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item
-                  @click="
-                    exportFormat = 'yaml';
-                    handleExport();
-                  "
-                  >YAML</el-dropdown-item
-                >
-                <el-dropdown-item
-                  @click="
-                    exportFormat = 'json';
-                    handleExport();
-                  "
-                  >JSON</el-dropdown-item
-                >
-                <el-dropdown-item
-                  @click="
-                    exportFormat = 'md';
-                    handleExport();
-                  "
-                  >MD</el-dropdown-item
-                >
-                <el-dropdown-item
-                  @click="
-                    exportFormat = 'txt';
-                    handleExport();
-                  "
-                  >TXT</el-dropdown-item
-                >
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-          <el-dropdown>
-            <el-button size="small">✨ 润色 ▼</el-button>
+            <el-button>✨ 润色 ▼</el-button>
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item
@@ -279,7 +252,6 @@ function yamlToPreview(yaml: string): string {
             </template>
           </el-dropdown>
           <el-button
-            size="small"
             @click="
               versionsVisible = true;
               loadVersions();
@@ -291,12 +263,7 @@ function yamlToPreview(yaml: string): string {
 
       <div class="editor-area" :class="viewMode">
         <div v-if="viewMode !== 'preview'" class="editor-pane">
-          <el-input
-            v-model="content"
-            type="textarea"
-            :rows="20"
-            class="yaml-editor"
-          />
+          <el-input v-model="content" type="textarea" class="yaml-editor" />
         </div>
         <div v-if="viewMode !== 'editor'" class="preview-pane">
           <div
@@ -306,6 +273,27 @@ function yamlToPreview(yaml: string): string {
         </div>
       </div>
     </template>
+
+    <!-- Export Dialog -->
+    <el-dialog v-model="exportVisible" title="导出剧本" width="400px">
+      <el-form label-width="80px">
+        <el-form-item label="文件名">
+          <el-input v-model="exportFileName" placeholder="请输入文件名" />
+        </el-form-item>
+        <el-form-item label="格式">
+          <el-radio-group v-model="exportFormat">
+            <el-radio value="yaml">YAML</el-radio>
+            <el-radio value="json">JSON</el-radio>
+            <el-radio value="md">MD</el-radio>
+            <el-radio value="txt">TXT</el-radio>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="exportVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleExport">下载</el-button>
+      </template>
+    </el-dialog>
 
     <!-- Polish Dialog -->
     <el-dialog v-model="polishVisible" title="确认润色" width="360px">
@@ -378,18 +366,19 @@ function yamlToPreview(yaml: string): string {
   display: flex;
   gap: 8px;
   overflow: hidden;
+  min-height: 0;
 }
 .editor-area.split .editor-pane,
 .editor-area.split .preview-pane {
   flex: 1;
   overflow: auto;
+  min-width: 0;
 }
 .editor-area.editor .editor-pane {
   flex: 1;
+  overflow: auto;
 }
-.editor-area.editor .preview-pane {
-  display: none;
-}
+.editor-area.editor .preview-pane,
 .editor-area.preview .editor-pane {
   display: none;
 }
@@ -397,13 +386,24 @@ function yamlToPreview(yaml: string): string {
   flex: 1;
   overflow: auto;
 }
+.editor-pane {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
 .yaml-editor {
+  flex: 1;
   font-family: Consolas, monospace;
   font-size: 13px;
   line-height: 1.6;
+  min-height: 0;
 }
 .yaml-editor :deep(textarea) {
   font-family: Consolas, monospace !important;
+  height: 100% !important;
+  resize: none;
+  min-height: 100%;
 }
 .preview-pane {
   background: rgba(255, 255, 255, 0.5);

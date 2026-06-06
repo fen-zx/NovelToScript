@@ -39,6 +39,7 @@ export class TaskRepository {
     const [list, total] = await Promise.all([
       prisma.task.findMany({
         where,
+        include: { novel: { select: { title: true } } },
         skip: (page - 1) * pageSize,
         take: pageSize,
         orderBy: { [sortBy]: sortOrder },

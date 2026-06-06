@@ -1,6 +1,6 @@
 <!-- 桌面端全局布局 -->
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { ref } from "vue";
 import { useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import NotificationCenter from "./NotificationCenter.vue";
@@ -8,7 +8,6 @@ import ThemeToggle from "./ThemeToggle.vue";
 
 const route = useRoute();
 const auth = useAuthStore();
-const user = computed(() => auth.user);
 const showUserMenu = ref(false);
 
 function handleLogout(e: Event) {
@@ -66,7 +65,8 @@ const navItems = [
   --sidebar-w: clamp(60px, 15vw, 280px);
   --header-h: clamp(56px, 10vh, 96px);
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   background: #f5f7fa;
   color: #303133;
   transition:
@@ -236,8 +236,9 @@ nav a.active {
   padding: clamp(16px, 2vh, 24px);
   flex: 1;
   width: calc(100vw - var(--sidebar-w));
-  min-height: calc(100vh - var(--header-h));
-  font-size: clamp(15px, 1vw, 17px);
+  height: calc(100vh - var(--header-h));
+  overflow-y: auto;
+  font-size: clamp(20px, 1.3vw, 22px);
   box-sizing: border-box;
   background: #f5f7fa;
   color: #303133;
