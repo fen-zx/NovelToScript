@@ -1,0 +1,190 @@
+<!-- P4 任务详情页 -->
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { ElMessage } from "element-plus";
+import { taskApi } from "@/api/tasks";
+import { connectTaskSSE } from "@/api/tasksSSE";
+import type { TaskDetail, AgentState } from "@/types/task";
+
+const route = useRoute();
+const router = useRouter();
+const task = ref<TaskDetail | null>(null);
+const agents = ref<AgentState[]>([
+  { name: "Novel Analysis", status: "PENDING", time: null, progress: 0 },
+  { name: "Character Extract", status: "PENDING", time: null, progress: 0 },
+  { name: "Plot Extraction", status: "PENDING", time: null, progress: 0 },
+  { name: "Scene Planning", status: "PENDING", time: null, progress: 0 },
+  { name: "Script Generation", status: "PENDING", time: null, progress: 0 },
+  { name: "YAML Validation", status: "PENDING", time: null, progress: 0 },
+  { name: "Script Polish", status: "PENDING", time: null, progress: 0 },
+]);
+const loading = ref(true);
+const error = ref("");
+const scriptId = ref<string | null>(null);
+
+const STATUS_ICONS: Record<string, string> = {
+  DONE: "✅",
+  RUNNING: "🔄",
+  PENDING: "⏳",
+  FAILED: "❌",
+};
+
+function updateAgent(name: string, status: AgentState["status"]) {
+  const a = agents.value.find((x) => x.name === name);
+  if (a) a.status = status;
+}
+
+let closeSSE = () => {};
+
+onMounted(async () => {
+  try {
+    const res = await taskApi.getById(route.params.id as string);
+    task.value = res.data;
+    res.data.agentResults?.forEach((r) => {
+      const a = agents.value.find((x) => x.name === r.agentName);
+      if (a) {
+        a.status = r.status;
+        a.time = r.completedAt;
+      }
+    });
+    scriptId.value = res.data.scriptId;
+  } catch {
+    error.value = "加载失败";
+  } finally {
+    loading.value = false;
+  }
+
+  closeSSE = connectTaskSSE(route.params.id as string, {
+    onAgentStart: (d) => updateAgent(d.agent, "RUNNING"),
+    onAgentDone: (d) => updateAgent(d.agent, "DONE"),
+    onAgentError: (d) => updateAgent(d.agent, "FAILED"),
+    onComplete: (d) => {
+      scriptId.value = d.scriptId;
+      ElMessage.success("剧本生成完成!");
+    },
+  });
+});
+
+onUnmounted(() => closeSSE());
+</script>
+
+<template>
+  <div class="detail-page">
+    <el-button text type="primary" @click="router.push('/tasks')"
+      >← 返回任务列表</el-button
+    >
+
+    <div v-if="loading" v-loading="loading" style="min-height: 300px" />
+    <div v-else-if="error" class="empty-state">
+      <p>{{ error }}</p>
+    </div>
+
+    <template v-else-if="task">
+      <el-card class="mb16">
+        <div class="info-header">
+          <h2>📊 {{ task.novelTitle }} 分析</h2>
+          <el-tag
+            :type="
+              task.status === 'COMPLETED'
+                ? 'success'
+                : task.status === 'PROCESSING'
+                  ? 'primary'
+                  : 'danger'
+            "
+          >
+            {{
+              task.status === "QUEUED"
+                ? "排队中"
+                : task.status === "PROCESSING"
+                  ? "进行中"
+                  : task.status === "COMPLETED"
+                    ? "已完成"
+                    : "失败"
+            }}
+          </el-tag>
+        </div>
+      </el-card>
+
+      <el-card class="mb16">
+        <h3>Agent 流水线</h3>
+        <div v-for="a in agents" :key="a.name" class="pipeline-row">
+          <span class="agent-icon">{{ STATUS_ICONS[a.status] }}</span>
+          <span class="agent-name">{{ a.name }}</span>
+          <span class="agent-status">{{
+            a.status === "DONE"
+              ? "已完成"
+              : a.status === "RUNNING"
+                ? "进行中"
+                : a.status === "PENDING"
+                  ? "等待中"
+                  : "失败"
+          }}</span>
+          <el-progress
+            v-if="a.status === 'RUNNING'"
+            :percentage="a.status === 'RUNNING' ? 67 : 100"
+            :show-text="false"
+            style="width: 80px"
+          />
+          <span class="agent-time">{{
+            a.time || (a.status === "PENDING" ? "—" : "...")
+          }}</span>
+        </div>
+      </el-card>
+
+      <el-button
+        type="primary"
+        size="large"
+        :disabled="!scriptId"
+        @click="router.push(`/script/${scriptId}`)"
+      >
+        {{ scriptId ? "进入剧本编辑 →" : "⏳ 分析完成后激活" }}
+      </el-button>
+    </template>
+  </div>
+</template>
+
+<style scoped>
+.detail-page {
+  max-width: 700px;
+}
+.mb16 {
+  margin-bottom: 16px;
+}
+.info-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.pipeline-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+  gap: 12px;
+}
+.agent-icon {
+  width: 24px;
+  text-align: center;
+}
+.agent-name {
+  flex: 1;
+  font-size: 14px;
+}
+.agent-status {
+  font-size: 13px;
+  color: #909399;
+  width: 60px;
+}
+.agent-time {
+  font-size: 12px;
+  color: #909399;
+  width: 50px;
+  text-align: right;
+}
+.empty-state {
+  text-align: center;
+  padding: 60px 0;
+  color: #909399;
+}
+</style>

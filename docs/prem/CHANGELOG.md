@@ -212,12 +212,275 @@
 ### 📄 页面实现蓝图
 
 - **文档**: 新建 `PAGE_IMPLEMENTATION.md` — 基于 PageGenerator
-- **内容覆盖**:
-  - 完整路由配置（7 页面 + AuthGuard + 懒加载）
-  - 每页目录结构 + 状态管理决策 + 数据流 ASCII 图
-  - P2/P3/P4/P5 四个核心 Composable 伪代码
-  - Pinia Store 详细设计（auth/notification/theme）
-  - 全局开发顺序（12 阶段）
-  - P0~P6 容器伪代码示例
+- **内容**: 路由配置 + 7 页状态管理 + Composable 伪代码 + 12 阶段开发顺序
 - **影响**: 前端开发
 - **级别**: major
+
+### 🏗️ 前端架构设计
+
+- **文档**: 新建 `FRONTEND_ARCHITECTURE.md`
+- **内容**: 16 章节 — 目录结构/组件分层/路由/状态管理/API层/Hook架构/数据流/权限/表单/错误处理/上传/SSE/性能/工程规范
+- **影响**: 前端架构
+- **级别**: major
+
+### 🚀 前端项目初始化
+
+- **项目**: Vite + Vue 3 + TypeScript 脚手架创建
+- **依赖**: Element Plus + Pinia + Vue Router + Axios + Sass
+- **已生成**:
+  - 4 个类型文件 (`types/api/task/script/novel.ts`)
+  - 7 个 API 模块 (`api/request/auth/novels/tasks/tasksSSE/scripts/schema.ts`)
+  - 3 个 Pinia Store (`stores/auth/notification/theme.ts`)
+  - 路由配置 (`router/index.ts` + AuthGuard)
+  - 2 个全局 Hooks (`hooks/useSSE/useCache.ts`)
+  - 全局组件占位 (`AppLayout/NotificationCenter/ThemeToggle.vue`)
+  - 入口文件 (`main.ts` + `App.vue` + `vite.config.ts`)
+  - 完整 `views/` 目录结构（7 页面）
+- **影响**: 前端项目
+- **级别**: major
+
+### 🧩 全局组件生成
+
+- **文件**: 生成 7 个全局组件 (`frontend/src/components/`)
+- **组件列表**:
+  - `AppLayout.vue` — 桌面布局: 固定侧边栏(180px) + 固定顶栏(50px) + 主内容区
+  - `AppLayoutMobile.vue` — 移动布局: 底部 Tab + 抽屉菜单
+  - `CacheIndicator.vue` — 缓存状态指示 (🔒已开启/🔓离线/🔄同步中)
+  - `NotificationCenter.vue` — 通知中心: 铃铛按钮 + 下拉消息面板
+  - `QueueIndicator.vue` — 队列指示 (运行 X/1 排队 Y/3)
+  - `TaskStatusTag.vue` — 任务状态标签 (el-tag 颜色映射)
+  - `ThemeToggle.vue` — 暗色模式切换 (太阳/月亮)
+- **影响**: 前端组件
+- **级别**: major
+
+### 📄 页面容器生成 (P0~P6)
+
+- **文件**: 生成全部 7 个页面 Vue 容器 (`frontend/src/views/`)
+- **页面列表**:
+  - `Auth/AuthPage.vue` — P0: Tab 切换登录/注册/重置, 账号唯一性检测, JWT 存储
+  - `Home/HomePage.vue` — P1: 项目概览卡片 + 快速操作 + 最近任务表 (Loading/Error/Empty 三态)
+  - `Import/ImportPage.vue` — P2: 四步导入 (上传→章节识别→元数据→提交), 拖拽+粘贴上传
+  - `Tasks/TaskListPage.vue` — P3: 多选筛选 + 分页 + 重试弹窗 (断点/从头) + 删除确认
+  - `TaskDetail/TaskDetailPage.vue` — P4: SSE 监听 5 事件更新 7 Agent 状态, 完成后激活编辑器
+  - `ScriptEditor/ScriptEditorPage.vue` — P5: 分屏三模式, 30s 自动保存, 导出/润色/版本/回滚
+  - `Schema/SchemaPage.vue` — P6: Schema 树 + 字段表搜索 + 设计原因/示例折叠面板
+- **影响**: 前端页面
+- **级别**: major
+
+### 🔧 P3 TaskListPage 修复
+
+- **修复**: 移除重复 `<script>` 块, `retryMode` ref 统一放入 `<script setup>`
+- **影响**: P3 页面
+- **级别**: patch
+
+### 🏗️ 后端架构同步更新
+
+- **文档**: 更新 `ARCHITECTURE.md` — 基于 PRD + PAGE_SPECS + API_SPECS + 前端代码审查
+- **更新内容**:
+  - 标题增加前端代码状态引用
+  - Auth 模块补充 `checkAccount` 账号检查接口
+  - 新增「前后端同步状态」附录：17 API 的前端封装模块映射
+  - 新增「页面→后端模块依赖」表：P0~P6 各页面对应的后端模块
+  - 新增「后端初始化待办」11 步清单
+- **附带修复**: `PROJECT_STATE.md` 产物清单表格格式化（修复列合并错乱）
+- **影响**: 后端架构, 项目管理
+- **级别**: minor
+
+### 🗄️ 数据库 Schema 重新生成
+
+- **文档**: 重新生成 `DATABASE_SCHEMA.md` + 更新 `prisma/schema.prisma` — 基于 ARCHITECTURE.md 领域模型
+- **变更内容**:
+  - 头部引用更新：`BackendArchitectureGenerator` → `ARCHITECTURE.md`
+  - Novel 实体：新增架构决策说明（`rawText` 存 MinIO 不存 DB）
+  - Script 实体：新增架构决策说明（`content` 存 Version 表）
+  - Scene 索引修复：`@@index([versionId])` → `@@index([versionId, sceneNumber])` 与 schema.prisma 同步
+  - Character 新增索引：`@@index([scriptId])`（按剧本查询人物）
+  - 外键表新增「原因」列：解释 Restrict/Cascade 选择理由
+  - 审计字段表新增 `deletedAt` 列，标注软删除
+  - 风险表替换 RISK-005（旧 N:N 误判 → 新 Restrict 保护说明），新增 RISK-006（Character 索引缺失）
+- **影响**: 数据库设计
+- **级别**: patch
+
+### 🔧 Prisma 1:1 关系约束修复
+
+- **问题**: `Novel.script Script?` 与 `Script.@@unique([userId, novelId])` 冲突
+  - Prisma 要求 1:1 反向关系的 FK 字段必须是唯一的
+  - `novelId` 仅在 `(userId, novelId)` 组合中唯一，不满足 1:1 约束
+- **修复**: `Script.novelId` 改为 `@unique`（替代组合唯一约束）
+  - 语义：一部小说只有一个剧本（Novel→Script 1:1）
+  - `novelId` 自身的唯一性已保证同一小说不重复创建剧本
+- **影响文件**: `prisma/schema.prisma`, `docs/prem/DATABASE_SCHEMA.md`
+- **级别**: patch
+
+### 🔌 API_SPECS 补充 — 缺失接口补全
+
+- **审查**: 对比 PAGE_SPECS + DATABASE_SCHEMA + 前端 `api/` 模块，发现 2 个缺失接口
+- **新增 A0d — 账号可用性检查**: `GET /api/auth/register?check=account&value=xxx`
+  - 响应: `{ "available": true|false }`
+  - 前端: `authApi.checkAccount()` — P0 注册页实时唯一性校验
+- **新增 A15 — 删除任务**: `DELETE /api/tasks/:id`
+  - 响应: `{ "code":0, "data":null }`
+  - 前端: `taskApi.delete()` — P3 任务列表删除操作
+- **接口总计**: 14 → **16 个**（A0a~A0d + A1~A15）
+- **影响**: API 规格
+- **级别**: patch
+
+### 🏗️ 后端 DTO + 错误码初始化
+
+- **新建**: `server/src/shared/` — 后端共享层代码
+- **文件清单**:
+  - `dto/request.dto.ts` — 16 接口的全部 Request DTO + Zod 校验 schema（RegisterDto, LoginDto, CreateTaskDto, UpdateScriptDto, PolishScriptDto 等 20 个类型）
+  - `dto/response.dto.ts` — 全部 Response DTO（ApiResponse<T>, PaginatedData<T>, TaskDetailResponse, ScriptDetailResponse, SchemaResponse 等 20 个类型）
+  - `errors/error-codes.ts` — 16 个业务错误码 + `AppError` 异常类 + `Errors` 工厂 + `success()/paginated()` 响应辅助
+  - `index.ts` — barrel re-export
+- **特点**:
+  - 文件名/字段限制通过 Zod 原生校验（`.min().max().regex()`）
+  - `AppError` 自动推断 HTTP 状态码（409/404/401/429/400/500）
+  - 错误码按模块分段（Auth 2001+, Task 3001+, Script 4001+, Novel 5001+）
+- **影响**: 后端开发
+- **级别**: major
+
+### 📋 SERVICE_SPECS — Service 层设计
+
+- **文档**: 新建 `SERVICE_SPECS.md` — 基于 API_SPECS (16接口) + DATABASE_SCHEMA (9表)
+- **内容**: 16 章节完整设计
+- **Service 清单**: 11 个 Service（User/Novel/Task/Script/Version/Character/AI/Polish/Export/Schema/Storage）
+- **核心设计**:
+  - TaskService 状态流转: `QUEUED → PROCESSING → COMPLETED/FAILED`
+  - ScriptService 聚合根: updateScript 含乐观锁 CAS, rollbackScript 以新 Version 回退
+  - AIService: 7 Agent 流水线 + 三级文本分片 + BullMQ 异步编排
+  - 8 个事务点 + 5 个缓存项 + 8 条风险分析
+  - 全部 16 API 的 Controller→Service 映射表
+- **影响**: 后端架构
+- **级别**: major
+
+### 🗄️ REPOSITORY_SPECS — Repository 层设计
+
+- **文档**: 新建 `REPOSITORY_SPECS.md` — 基于 DATABASE_SCHEMA (9表) + SERVICE_SPECS
+- **Repository 清单**: 9 个（User/Novel/Task/AgentResult/Script/Version/Character/Scene/Dialogue）
+- **核心设计**:
+  - 每个 Repository 含完整 CRUD + Prisma 实现代码示例
+  - Script 软删除: 所有查询默认 `WHERE deletedAt IS NULL`
+  - 统一分页规范: `PaginationParams → skip/take` + 并行 count
+  - 11 项索引依赖对照 + 5 条风险分析
+  - Service→Repository 依赖关系图
+- **影响**: 后端架构
+- **级别**: major
+
+### ⚡ QUEUE_SPECS — BullMQ 队列架构
+
+- **文档**: 新建 `QUEUE_SPECS.md` — 基于 SERVICE_SPECS + ARCHITECTURE AI 工作流
+- **队列清单**: 4 个（script-generation | script-polish | export-pdf | cleanup）
+- **核心设计**:
+  - 4 个 Worker 完整实现代码（含 SSE 推送、进度更新、异常处理）
+  - Task 状态机: `QUEUED → PROCESSING → COMPLETED/FAILED`
+  - 重试: script-generation 3次(指数退避), polish/export 2次
+  - 超时: 600s/120s/60s/300s 分级
+  - 并发: 1/1/2/1 (PRD 约束: 运行1+排队3)
+  - Cron: cleanup 每天03:00
+  - 监控: Bull Board 面板 + 6项指标
+  - 6 条风险分析 (2 High + 3 Medium + 1 Low)
+- **影响**: 后端架构
+- **级别**: major
+
+### 🤖 AI_WORKFLOW — LangChain + DeepSeek AI 工作流
+
+- **文档**: 新建 `AI_WORKFLOW.md`
+- **内容**: 15 章节完整设计
+- **Chain 清单**: 7 条 (NovelAnalysis → CharacterExtraction → PlotAnalysis → ScenePlanning → ScriptGeneration → YamlValidation → ScriptPolish)
+- **核心亮点**:
+  - 7 个完整 Prompt 模板 + 变量占位符 + 输出格式
+  - DeepSeek 双温策略: 分析类 0.3 / 创作类 0.7~0.8
+  - 三级分片: 章节→段落→语义, 8000字/片 + 200 overlap
+  - 三层校验: Parser(代码) → Zod(Schema) → AI(语义)
+  - Token 估算: 30章小说 ~180K tokens
+  - 8 条风险分析 (2 High + 4 Medium + 2 Low)
+- **影响**: AI 设计
+- **级别**: major
+
+### 🚀 后端基础设施代码生成
+
+- **生成**: `backend/` 项目配置 + 基础设施层代码
+- **config/ (3文件)**:
+  - `env.ts` — 环境变量加载 + 类型定义（PORT/DB/Redis/MinIO/JWT/DeepSeek）
+  - `cors.ts` — CORS 配置（开发 localhost:5173）
+  - `deepseek.ts` — 三温模型实例（analysis 0.3 / creative 0.7 / generation 0.8）
+- **shared/infra (4文件)**:
+  - `database/prisma.ts` — PrismaClient 单例 + connect/disconnect
+  - `cache/redis.ts` — ioredis 连接管理 + 自动重连
+  - `queue/queue-manager.ts` — 4 个 BullMQ 队列定义 + 并发检查
+  - `storage/minio.ts` — MinIO 客户端 + 4 Bucket 初始化 + 路径工具
+- **项目配置**:
+  - `package.json` — 17 依赖 + 6 脚本（dev/build/start/worker/migrate/studio）
+  - `tsconfig.json` — ES2022 + paths `@/*`
+  - `.env` — 完整环境变量模板
+- **影响**: 后端项目
+- **级别**: major
+
+### 🚀 后端业务代码生成
+
+- **Repository (9)**: User/Novel/Task/AgentResult/Script/Version/Character/Scene/Dialogue
+- **Service (4)**: AuthService(注册/登录/重置/查重), NovelService(导入+MinIO), TaskService(创建/列表/详情/重试/删除+队列), ScriptService(CRUD+版本+回滚+软删除)
+- **Route (4)**: auth/task/novel/script — 15 API 含 Zod 校验 + JWT 认证
+- **Middleware (3)**: auth(JWT验证+optional), error(AppError+ZodError), validate(Zod schema)
+- **入口**: `app.ts` (Express+SSE+健康检查) + `main.ts` (DB/Redis/MinIO初始化+Graceful Shutdown)
+- **Worker (4)**: generate-script + polish-script + export-pdf + cleanup
+- **AI (17)**: `ai.service.ts` (AgentPipeline) + 7 Chain + 7 Prompt + Chunker + Parser
+- **Utils (3)**: `chapter-detector` (五级兜底), `yaml-validator` (本地校验), `logger` (Pino)
+- **影响**: 后端代码
+- **级别**: major
+
+---
+
+## ✅ 后端项目完成总结
+
+**NovelToScript 后端项目已全部生成完毕** — 覆盖全部 21 个 Skill 步骤：
+
+| #        | 层                             | 文件数      | 状态 |
+| -------- | ------------------------------ | ----------- | ---- |
+| 1        | Config                         | 3           | ✅   |
+| 2        | Middleware                     | 3           | ✅   |
+| 3        | DTO                            | 2           | ✅   |
+| 4        | Error Codes                    | 1           | ✅   |
+| 5        | Infra (DB/Cache/Queue/Storage) | 4           | ✅   |
+| 6        | Repository                     | 9           | ✅   |
+| 7        | Service                        | 9           | ✅   |
+| 8        | Controller                     | 4           | ✅   |
+| 9        | Routes                         | 5           | ✅   |
+| 10       | Queue Manager                  | 1           | ✅   |
+| 11       | Worker                         | 4           | ✅   |
+| 12       | AI Module                      | 17          | ✅   |
+| 13       | Utils                          | 3           | ✅   |
+| 14       | Entry (main+app)               | 2           | ✅   |
+| **总计** |                                | **66 文件** | ✅   |
+
+**技术栈**: Node.js + Express + TypeScript + Prisma 7 + SQLite + BullMQ + Redis + MinIO + LangChain + DeepSeek + Zod + Pino
+
+**运行方式**:
+
+```bash
+cd backend
+npm run dev          # API 服务器
+npm run worker       # BullMQ Worker
+npm run db:migrate   # Prisma 迁移
+```
+
+## 后端bug修复
+
+### [Fixed] 修复 `GET /api/tasks` 及其他带 query 参数接口的 500 错误
+
+**问题**：所有使用 `validate(schema, "query")` 中间件的 GET 接口均返回 `500 Internal Server Error`（错误码 `9001`），例如 `GET /api/tasks?pageSize=5`。
+
+**根因**：Express 5 中 `req.query` 是原型链上的 getter-only 属性（无 setter）。`validate` 中间件中的直接赋值 `req.query = data` 在 CommonJS 模式下**静默失败**，导致 Zod 校验并转换后的数据（如 `pageSize` 由字符串 `"5"` 转为数字 `5`）未能生效。后续 Prisma 查询收到字符串类型参数而抛出异常。
+
+**修复**：validate.middleware.ts — 对 `source === "query"` 改用 `Object.defineProperty(req, "query", { value: data })` 强制覆盖原型 getter。
+
+**影响文件**：
+- validate.middleware.ts
+
+**受益路由**（同中间件修复覆盖）：
+- `GET /api/tasks` — 任务列表查询
+- `GET /api/scripts/:id/export` — 剧本导出
+- `GET /api/auth/register` — 账号可用性检查
+
+---

@@ -1,7 +1,8 @@
 # Backend Architecture — AI小说转剧本工具
 
-> 基于 RequirementAnalyzer + DesignGenerator 输出自动生成
+> 基于 RequirementAnalyzer + DesignGenerator + PAGE_SPECS + API_SPECS 输出
 > 日期: 2026-06-05 | 技术栈: Express + Prisma + LangChain + BullMQ
+> 前端代码已生成: 7 页面 + 7 全局组件 + 7 API 模块 + 3 Store + 2 Hooks
 
 ---
 
@@ -53,18 +54,18 @@
 
 ## 三、业务模块
 
-| 模块        | 路径前缀                  | 职责                                     |
-| ----------- | ------------------------- | ---------------------------------------- |
-| **Auth**    | `/api/auth`               | 注册、登录、密码重置、JWT 签发与验证     |
-| **User**    | `/api/users`              | 用户信息管理、存储配额查询               |
-| **Novel**   | `/api/novels`             | 小说导入、章节识别、文本分片、原文存储   |
-| **Task**    | `/api/tasks`              | 分析任务创建、列表、详情、SSE 进度、重试 |
-| **Script**  | `/api/scripts`            | 剧本 CRUD、版本历史、回滚                |
-| **Export**  | `/api/scripts/:id/export` | 多格式导出（yaml/json/md/txt/pdf）       |
-| **Polish**  | `/api/scripts/:id/polish` | AI 润色（7 种风格可选）                  |
-| **Schema**  | `/api/schema`             | YAML Schema 定义文档                     |
-| **AI**      | 内部模块                  | LangChain Agent 编排（7 Agent 流水线）   |
-| **Storage** | 内部模块                  | MinIO 文件上传/下载/生命周期管理         |
+| 模块        | 路径前缀                  | 职责                                           |
+| ----------- | ------------------------- | ---------------------------------------------- |
+| **Auth**    | `/api/auth`               | 注册、登录、密码重置、账号检查、JWT 签发与验证 |
+| **User**    | `/api/users`              | 用户信息管理、存储配额查询                     |
+| **Novel**   | `/api/novels`             | 小说导入、章节识别、文本分片、原文存储         |
+| **Task**    | `/api/tasks`              | 分析任务创建、列表、详情、SSE 进度、重试       |
+| **Script**  | `/api/scripts`            | 剧本 CRUD、版本历史、回滚                      |
+| **Export**  | `/api/scripts/:id/export` | 多格式导出（yaml/json/md/txt/pdf）             |
+| **Polish**  | `/api/scripts/:id/polish` | AI 润色（7 种风格可选）                        |
+| **Schema**  | `/api/schema`             | YAML Schema 定义文档                           |
+| **AI**      | 内部模块                  | LangChain Agent 编排（7 Agent 流水线）         |
+| **Storage** | 内部模块                  | MinIO 文件上传/下载/生命周期管理               |
 
 ---
 
@@ -725,22 +726,69 @@ CMD ["node", "dist/main.js"]
 
 ## 附录: API ↔ 模块映射
 
-| API                              | 模块   | Controller                    |
-| -------------------------------- | ------ | ----------------------------- |
-| POST /api/auth/register          | Auth   | AuthController.register       |
-| POST /api/auth/login             | Auth   | AuthController.login          |
-| POST /api/auth/reset-password    | Auth   | AuthController.resetPassword  |
-| POST /api/novels/import          | Novel  | NovelController.import        |
-| POST /api/tasks                  | Task   | TaskController.create         |
-| GET /api/tasks                   | Task   | TaskController.list           |
-| GET /api/tasks/:id               | Task   | TaskController.getById        |
-| GET /api/tasks/:id/stream        | Task   | TaskController.streamSSE      |
-| POST /api/tasks/:id/retry        | Task   | TaskController.retry          |
-| GET /api/scripts/:id             | Script | ScriptController.getById      |
-| PUT /api/scripts/:id             | Script | ScriptController.update       |
-| GET /api/scripts/:id/versions    | Script | ScriptController.listVersions |
-| GET /api/scripts/:id/versions/:v | Script | ScriptController.getVersion   |
-| POST /api/scripts/:id/rollback   | Script | ScriptController.rollback     |
-| POST /api/scripts/:id/polish     | Polish | PolishController.polish       |
-| GET /api/scripts/:id/export      | Export | ExportController.export       |
-| GET /api/schema                  | Schema | SchemaController.get          |
+| API                              | 模块   | Controller                    | 前端 API 模块     |
+| -------------------------------- | ------ | ----------------------------- | ----------------- |
+| POST /api/auth/register          | Auth   | AuthController.register       | `api/auth.ts`     |
+| POST /api/auth/login             | Auth   | AuthController.login          | `api/auth.ts`     |
+| POST /api/auth/reset-password    | Auth   | AuthController.resetPassword  | `api/auth.ts`     |
+| POST /api/novels/import          | Novel  | NovelController.import        | `api/novels.ts`   |
+| POST /api/tasks                  | Task   | TaskController.create         | `api/tasks.ts`    |
+| GET /api/tasks                   | Task   | TaskController.list           | `api/tasks.ts`    |
+| GET /api/tasks/:id               | Task   | TaskController.getById        | `api/tasks.ts`    |
+| GET /api/tasks/:id/stream        | Task   | TaskController.streamSSE      | `api/tasksSSE.ts` |
+| POST /api/tasks/:id/retry        | Task   | TaskController.retry          | `api/tasks.ts`    |
+| GET /api/scripts/:id             | Script | ScriptController.getById      | `api/scripts.ts`  |
+| PUT /api/scripts/:id             | Script | ScriptController.update       | `api/scripts.ts`  |
+| GET /api/scripts/:id/versions    | Script | ScriptController.listVersions | `api/scripts.ts`  |
+| GET /api/scripts/:id/versions/:v | Script | ScriptController.getVersion   | `api/scripts.ts`  |
+| POST /api/scripts/:id/rollback   | Script | ScriptController.rollback     | `api/scripts.ts`  |
+| POST /api/scripts/:id/polish     | Polish | PolishController.polish       | `api/scripts.ts`  |
+| GET /api/scripts/:id/export      | Export | ExportController.export       | `api/scripts.ts`  |
+| GET /api/schema                  | Schema | SchemaController.get          | `api/schema.ts`   |
+
+---
+
+## 附录: 前后端同步状态
+
+### 前端已生成 → 后端待实现
+
+| 前端模块                               | 对应后端模块         | 状态      |
+| -------------------------------------- | -------------------- | --------- |
+| `api/request.ts` (Axios + JWT)         | Auth                 | 🟡 待联调 |
+| `api/auth.ts` (注册/登录/重置/检查)    | Auth                 | 🟡 待联调 |
+| `api/novels.ts` (FormData 上传)        | Novel                | 🟡 待联调 |
+| `api/tasks.ts` (CRUD + 重试)           | Task                 | 🟡 待联调 |
+| `api/tasksSSE.ts` (SSE 进度)           | Task                 | 🟡 待联调 |
+| `api/scripts.ts` (CRUD+润色+版本+导出) | Script/Polish/Export | 🟡 待联调 |
+| `api/schema.ts` (Schema 查询)          | Schema               | 🟡 待联调 |
+| `stores/auth.ts` (Token/User)          | Auth                 | 🟡 待联调 |
+| `stores/notification.ts` (消息队列)    | — (SSE Push)         | 🟡 待联调 |
+| `stores/theme.ts` (暗色模式)           | — (纯前端)           | ✅ 独立   |
+| `hooks/useSSE.ts` (SSE 自动重连)       | Task SSE             | 🟡 待联调 |
+| `hooks/useCache.ts` (IndexedDB)        | — (纯前端)           | ✅ 独立   |
+
+### 页面 → 后端模块依赖
+
+| 页面                | 依赖的后端模块                     |
+| ------------------- | ---------------------------------- |
+| P0 AuthPage         | Auth (注册/登录/重置)              |
+| P1 HomePage         | Task (任务列表)                    |
+| P2 ImportPage       | Novel (上传) + Task (创建)         |
+| P3 TaskListPage     | Task (列表/删除/重试)              |
+| P4 TaskDetailPage   | Task (详情/SSE)                    |
+| P5 ScriptEditorPage | Script + Polish + Export + Version |
+| P6 SchemaPage       | Schema                             |
+
+### 后端初始化待办
+
+1. 初始化 `server/` 项目 (Express + TypeScript)
+2. Prisma migrate + seed
+3. 实现 Auth 模块 (注册/登录/JWT)
+4. 实现 Novel 模块 (multer 上传 + 章节识别)
+5. 实现 Task 模块 (CRUD + SSE)
+6. 实现 Script 模块 (CRUD + 版本 + 回滚)
+7. 实现 AI Pipeline (LangChain 7 Agent)
+8. 实现 Export 模块 (yaml/json/md/txt/pdf)
+9. 实现 Polish 模块 (7 风格润色)
+10. 实现 Schema 模块
+11. Redis + BullMQ + MinIO 集成
