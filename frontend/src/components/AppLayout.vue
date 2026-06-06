@@ -1,6 +1,6 @@
 <!-- 桌面端全局布局 -->
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import NotificationCenter from "./NotificationCenter.vue";
@@ -9,6 +9,12 @@ import ThemeToggle from "./ThemeToggle.vue";
 const route = useRoute();
 const auth = useAuthStore();
 const user = computed(() => auth.user);
+const showUserMenu = ref(false);
+
+function handleLogout(e: Event) {
+  e.stopPropagation();
+  auth.logout();
+}
 
 const navItems = [
   { path: "/", icon: "🏠", label: "首页" },
@@ -37,7 +43,18 @@ const navItems = [
       <div class="header-right">
         <NotificationCenter />
         <ThemeToggle />
-        <span class="user-name">👤 {{ user?.username || "用户" }}</span>
+        <div
+          class="user-area"
+          @mouseenter="showUserMenu = true"
+          @mouseleave="showUserMenu = false"
+        >
+          <span class="user-name">👤</span>
+          <Transition name="fade">
+            <div v-if="showUserMenu" class="user-dropdown" @click.stop>
+              <button class="logout-btn" @click="handleLogout">退出登录</button>
+            </div>
+          </Transition>
+        </div>
       </div>
     </header>
     <main class="main"><router-view /></main>
@@ -50,6 +67,15 @@ const navItems = [
   --header-h: clamp(56px, 10vh, 96px);
   display: flex;
   min-height: 100vh;
+  background: #f5f7fa;
+  color: #303133;
+  transition:
+    background 0.3s,
+    color 0.3s;
+}
+.dark .app-layout {
+  background: #1a1a2e;
+  color: #e0e0e0;
 }
 .sidebar {
   width: var(--sidebar-w);
@@ -148,8 +174,61 @@ nav a.active {
   align-items: center;
   gap: clamp(12px, 1.2vw, 20px);
 }
+.user-area {
+  position: relative;
+  cursor: pointer;
+}
 .user-name {
   font-size: clamp(14px, 1vw, 16px);
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+.user-name:hover {
+  background: rgba(108, 92, 231, 0.1);
+}
+.user-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 6px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  padding: 6px;
+  z-index: 300;
+  min-width: 110px;
+}
+.dark .user-dropdown {
+  background: rgba(40, 40, 70, 0.95);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+.logout-btn {
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 8px 14px;
+  font-size: 13px;
+  color: #e17055;
+  cursor: pointer;
+  border-radius: 6px;
+  text-align: left;
+  transition: background 0.15s;
+}
+.logout-btn:hover {
+  background: rgba(225, 112, 85, 0.1);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.15s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 .main {
   margin-left: var(--sidebar-w);
@@ -160,5 +239,14 @@ nav a.active {
   min-height: calc(100vh - var(--header-h));
   font-size: clamp(15px, 1vw, 17px);
   box-sizing: border-box;
+  background: #f5f7fa;
+  color: #303133;
+  transition:
+    background 0.3s,
+    color 0.3s;
+}
+.dark .main {
+  background: #1a1a2e;
+  color: #e0e0e0;
 }
 </style>
