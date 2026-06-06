@@ -1,7 +1,6 @@
 // Auth Store — Pinia
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref(localStorage.getItem('token') || '')
@@ -22,8 +21,7 @@ export const useAuthStore = defineStore('auth', () => {
     token.value = ''
     user.value = null
     localStorage.removeItem('token')
-    const router = useRouter()
-    router.push('/auth')
+    // 路由跳转由调用方处理（避免 store 内 useRouter 不可用）
   }
 
   return { token, user, isLoggedIn, setToken, setUser, logout }
