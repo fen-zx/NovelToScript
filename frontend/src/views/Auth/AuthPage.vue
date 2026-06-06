@@ -31,8 +31,8 @@ async function handleLogin() {
     } else {
       errorMsg.value = res.message;
     }
-  } catch {
-    errorMsg.value = "网络异常，请重试";
+  } catch (e: any) {
+    errorMsg.value = e?.response?.data?.message || "网络异常，请重试";
   } finally {
     submitting.value = false;
   }
@@ -73,25 +73,34 @@ async function handleRegister() {
 
 // Reset Password
 const resetStep = ref(1);
-const resetForm = reactive({ username: "", newPassword: "" });
+const resetForm = reactive({ username: "", account: "", newPassword: "" });
 async function handleVerify() {
+  errorMsg.value = "";
+  if (!resetForm.username || !resetForm.account) {
+    errorMsg.value = "请填写用户名和账号";
+    return;
+  }
   try {
     await authApi.resetPassword({
       username: resetForm.username,
-      newPassword: "",
+      account: resetForm.account,
     });
     resetStep.value = 2;
-  } catch {
-    errorMsg.value = "用户名不存在";
+  } catch (e: any) {
+    errorMsg.value = e?.response?.data?.message || "用户名或账号不匹配";
   }
 }
 async function handleReset() {
+  if (resetForm.newPassword.length < 6) {
+    errorMsg.value = "密码至少6位";
+    return;
+  }
   try {
     await authApi.resetPassword(resetForm);
     ElMessage.success("密码重置成功");
     tab.value = "login";
-  } catch {
-    errorMsg.value = "重置失败";
+  } catch (e: any) {
+    errorMsg.value = e?.response?.data?.message || "重置失败";
   }
 }
 </script>
@@ -194,11 +203,24 @@ async function handleReset() {
 
       <!-- 重置密码 -->
       <div v-if="tab === 'reset'">
+        <el-alert
+          v-if="errorMsg"
+          :title="errorMsg"
+          type="error"
+          show-icon
+          class="mb8"
+        />
         <template v-if="resetStep === 1">
           <el-form-item
             ><el-input
               v-model="resetForm.username"
               placeholder="请输入用户名"
+              size="large"
+          /></el-form-item>
+          <el-form-item
+            ><el-input
+              v-model="resetForm.account"
+              placeholder="请输入账号"
               size="large"
           /></el-form-item>
           <el-button

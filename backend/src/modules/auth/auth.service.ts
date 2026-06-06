@@ -30,9 +30,19 @@ export class AuthService {
     return { token, user: { id: user.id, username: user.username, account: user.account } }
   }
 
-  async resetPassword(username: string, newPassword: string) {
-    const user = await this.userRepo.findByUsername(username)
+  async verifyUsernameAndAccount(username: string, account: string) {
+    const user = await this.userRepo.findByAccount(account)
     if (!user) throw Errors.usernameNotFound()
+    if (user.username !== username) throw Errors.usernameNotFound()
+    return true
+  }
+
+  async resetPassword(username: string, account: string, newPassword: string) {
+    const user = await this.userRepo.findByAccount(account)
+    if (!user) throw Errors.usernameNotFound()
+    if (user.username !== username) throw Errors.usernameNotFound()
+
+    if (newPassword.length < 6) throw Errors.validation("密码至少6位")
 
     const passwordHash = await bcrypt.hash(newPassword, 12)
     await this.userRepo.update(user.id, { passwordHash })

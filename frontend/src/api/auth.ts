@@ -15,7 +15,8 @@ export interface RegisterParams {
 
 export interface ResetPwdParams {
   username: string
-  newPassword: string
+  account: string
+  newPassword?: string
 }
 
 export interface LoginResult {

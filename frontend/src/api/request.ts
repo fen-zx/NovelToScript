@@ -20,8 +20,12 @@ request.interceptors.response.use(
   (res): any => res.data,
   (err) => {
     if (err.response?.status === 401) {
-      localStorage.removeItem('token')
-      window.location.href = '/auth'
+      // 非登录接口的 401 才跳转（登录失败 401 由页面自行处理）
+      const isLoginRequest = err.config?.url?.includes('/auth/login')
+      if (!isLoginRequest) {
+        localStorage.removeItem('token')
+        window.location.href = '/auth'
+      }
     }
     return Promise.reject(err)
   }
