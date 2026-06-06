@@ -168,7 +168,7 @@ script
 
 <style scoped>
 .schema-page {
-  max-width: 700px;
+  width: 100%;
 }
 .mb16 {
   margin-bottom: 16px;

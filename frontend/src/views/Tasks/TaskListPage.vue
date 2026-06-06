@@ -224,7 +224,7 @@ watch(
 
 <style scoped>
 .task-page {
-  max-width: 900px;
+  width: 100%;
 }
 .page-header {
   display: flex;

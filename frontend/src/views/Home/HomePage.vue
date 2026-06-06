@@ -136,7 +136,7 @@ onMounted(async () => {
 
 <style scoped>
 .home-page {
-  max-width: 800px;
+  width: 100%;
 }
 .mb16 {
   margin-bottom: 16px;
