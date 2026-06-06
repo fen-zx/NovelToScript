@@ -1,18 +1,20 @@
 <!-- 桌面端全局布局 -->
 <script setup lang="ts">
 import { ref } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import NotificationCenter from "./NotificationCenter.vue";
 import ThemeToggle from "./ThemeToggle.vue";
 
 const route = useRoute();
+const router = useRouter();
 const auth = useAuthStore();
 const showUserMenu = ref(false);
 
 function handleLogout(e: Event) {
   e.stopPropagation();
   auth.logout();
+  router.push("/auth");
 }
 
 const navItems = [
@@ -177,6 +179,7 @@ nav a.active {
 .user-area {
   position: relative;
   cursor: pointer;
+  padding-bottom: 8px;
 }
 .user-name {
   font-size: clamp(14px, 1vw, 16px);
@@ -192,7 +195,7 @@ nav a.active {
   top: 100%;
   left: 50%;
   transform: translateX(-50%);
-  margin-top: 6px;
+  padding-top: 6px;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(0, 0, 0, 0.08);
