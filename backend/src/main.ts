@@ -13,6 +13,13 @@ async function bootstrap() {
   await connectRedis()
   await initBuckets()
 
+  // 启动 BullMQ Workers（异步，不阻塞 API）
+  import("@/queue/workers/index").then(() => {
+    logger.info("[Worker] All workers started")
+  }).catch(err => {
+    logger.error("[Worker] Failed to start:", err)
+  })
+
   const app = createApp()
 
   const server = app.listen(env.PORT, () => {

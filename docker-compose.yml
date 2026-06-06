@@ -1,0 +1,63 @@
+services:
+  # ===== Redis — 消息队列 + 缓存 =====
+  redis:
+    image: redis:7-alpine
+    container_name: nts-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ===== MinIO — 对象存储（小说文件） =====
+  minio:
+    image: minio/minio:latest
+    container_name: nts-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"   # API
+      - "9001:9001"   # Console (浏览器管理界面)
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ===== Backend — Express API =====
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nts-backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./backend/.env.docker
+    volumes:
+      - sqlite_data:/data          # SQLite 持久化
+      - ./backend/prisma:/app/prisma:ro  # 方便运行 migrate（只读挂载）
+    depends_on:
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    # 首次启动自动执行 migrate，之后启动已有数据则跳过
+    command: >
+      sh -c "npx prisma migrate deploy && npx tsx src/main.ts"
+
+volumes:
+  redis_data:
+  minio_data:
+  sqlite_data:

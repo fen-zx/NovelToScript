@@ -1,6 +1,6 @@
 // Export PDF Worker — Puppeteer 渲染
 import { Worker } from "bullmq"
-import { redis } from "@/shared/cache/redis"
+import { redisConnection } from "@/shared/queue/queue-manager"
 import { ScriptRepository } from "@/modules/script/script.repository"
 import { VersionRepository } from "@/modules/script/version.repository"
 import { minioClient, storagePaths } from "@/shared/storage/minio"
@@ -36,5 +36,5 @@ export const exportPdfWorker = new Worker(
 
     return { fileUrl: `/${key}`, fileName }
   },
-  { connection: redis, concurrency: 2, lockDuration: 60_000 },
+  { connection: redisConnection, concurrency: 2, lockDuration: 60_000 },
 )

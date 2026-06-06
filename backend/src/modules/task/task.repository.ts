@@ -18,7 +18,10 @@ export class TaskRepository {
   async findByIdWithResults(id: string) {
     return prisma.task.findUnique({
       where: { id },
-      include: { agentResults: { orderBy: { createdAt: "asc" } } },
+      include: {
+        agentResults: { orderBy: { createdAt: "asc" } },
+        novel: { include: { scripts: { orderBy: { createdAt: "desc" }, take: 1 } } },
+      },
     })
   }
 

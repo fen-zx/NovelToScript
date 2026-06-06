@@ -1,5 +1,5 @@
 // BullMQ 队列管理器
-import { Queue, Worker, QueueScheduler, type ConnectionOptions } from "bullmq"
+import { Queue, Worker, type ConnectionOptions } from "bullmq"
 import { redis } from "@/shared/cache/redis"
 import { env } from "@/config/env"
 
@@ -7,6 +7,8 @@ const connection: ConnectionOptions = {
   host: new URL(env.REDIS_URL).hostname,
   port: parseInt(new URL(env.REDIS_URL).port || "6379", 10),
 }
+
+export { connection as redisConnection }
 
 // ═══════════════════════════════════════
 // 队列定义

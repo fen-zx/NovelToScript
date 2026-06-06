@@ -64,9 +64,9 @@ model Novel {
     filePath     String?
     createdAt    DateTime   @default(now())
 
-    user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-    task   Task?
-    script Script?
+    user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    task    Task?
+    scripts Script[]
 
     @@index([userId, createdAt])
 }
@@ -113,7 +113,7 @@ model AgentResult {
 model Script {
     id             String    @id @default(cuid())
     userId         String
-    novelId        String    @unique
+    novelId        String
     title          String
     currentVersion Int       @default(1)
     createdAt      DateTime  @default(now())

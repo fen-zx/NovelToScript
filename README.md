@@ -58,7 +58,40 @@ NovelToScript/
 
 ## 快速开始
 
-### 1. 环境要求
+### 方式一：Docker Compose 一键启动（推荐）
+
+```bash
+# 1. 配置 DeepSeek API Key
+#    编辑 backend/.env.docker，填入 DEEPSEEK_API_KEY
+
+# 2. 构建并启动所有服务（Redis + MinIO + Backend）
+docker compose up -d --build
+
+# 3. 启动前端
+cd frontend
+npm install
+npm run dev
+```
+
+服务启动后：
+
+| 服务          | 地址                  |
+| ------------- | --------------------- |
+| 前端          | http://localhost:5173 |
+| API           | http://localhost:3000 |
+| MinIO Console | http://localhost:9001 |
+
+```
+# 查看日志
+docker compose logs -f backend
+
+# 停止所有服务
+docker compose down
+```
+
+### 方式二：手动启动
+
+#### 1. 环境要求
 
 | 依赖         | 版本             | 用途                             | 必须            |
 | ------------ | ---------------- | -------------------------------- | --------------- |
@@ -67,87 +100,36 @@ NovelToScript/
 | MinIO        | latest           | 文件存储（小说原文、剧本、导出） | ✅              |
 | DeepSeek API | —                | AI 剧本生成                      | ⚠️ 开发时可不填 |
 
-### 2. 启动基础设施（Redis + MinIO）
-
-**后端启动前，必须先启动 Redis 和 MinIO。**
-
-#### Windows（原生）
-
-```powershell
-# ─── Redis ───
-# 下载 Redis for Windows: https://github.com/tporadowski/redis/releases
-# 解压后运行:
-redis-server.exe
-
-# ─── MinIO ───
-# 下载
-Invoke-WebRequest -Uri "https://dl.min.io/server/minio/release/windows-amd64/minio.exe" -OutFile "$env:USERPROFILE\minio.exe"
-# 启动 (API:9000, Console:9001, 账号: minioadmin / minioadmin)
-& "$env:USERPROFILE\minio.exe" server "$env:USERPROFILE\minio-data" --console-address ":9001"
-```
-
-#### 使用 Docker（推荐）
+#### 2. 启动基础设施
 
 ```bash
+# Redis
 docker run -d --name redis -p 6379:6379 redis:7-alpine
+
+# MinIO (API:9000, Console:9001, 账号: minioadmin / minioadmin)
 docker run -d --name minio -p 9000:9000 -p 9001:9001 \
   -e MINIO_ROOT_USER=minioadmin \
   -e MINIO_ROOT_PASSWORD=minioadmin \
   minio/minio server /data --console-address ":9001"
 ```
 
-### 3. 后端启动
+#### 3. 后端启动
 
 ```bash
-# 进入后端目录
 cd backend
-
-# 安装依赖
 npm install
-
-# 配置环境变量 (编辑 .env)
-# 必填: DEEPSEEK_API_KEY=sk-xxx
-
-# 数据库迁移
+# 编辑 .env，填入 DEEPSEEK_API_KEY
 npm run db:migrate
-
-# 启动 API 服务器 (端口 3000)
-npm run dev
-
-# 另开终端，启动 Worker
-npm run worker
+npm run dev          # API 服务器 (端口 3000)
+npm run worker       # 另开终端，启动 Worker
 ```
 
-### 4. 前端启动
+#### 4. 前端启动
 
 ```bash
-# 进入前端目录
 cd frontend
-
-# 安装依赖
 npm install
-
-# 启动开发服务器 (端口 5173)
-npm run dev
-```
-
-### 5. 访问
-
-| 服务          | 地址                                |
-| ------------- | ----------------------------------- |
-| 前端          | http://localhost:5173               |
-| API 健康检查  | http://localhost:3000/api/health    |
-| MinIO Console | http://localhost:9001               |
-| Prisma Studio | `npm run db:studio`（backend 目录） |
-
-### 6. 启动顺序总结
-
-```
-1. Redis     (端口 6379)  ← 必须先启动
-2. MinIO     (端口 9000)  ← 必须先启动
-3. 后端 API  (端口 3000)  ← npm run dev
-4. 后端 Worker           ← npm run worker (可选，AI功能需要)
-5. 前端      (端口 5173)  ← npm run dev
+npm run dev          # 开发服务器 (端口 5173)
 ```
 
 ## 核心流程

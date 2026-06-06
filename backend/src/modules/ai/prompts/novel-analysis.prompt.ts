@@ -7,7 +7,7 @@ export const NOVEL_ANALYSIS_PROMPT = `你是一位资深文学编辑。请分析
 3. 描述叙事风格特点
 
 ## 输出格式
-严格输出 JSON：{"genre":"仙侠|都市|科幻|历史|悬疑|言情|武侠|其他","subGenre":"子类型","themes":["主题1"],"narrativeStyle":"第一人称|第三人称|多视角","toneStyle":"严肃|轻松|幽默|悲情|热血","events":[{"summary":"简述","importance":"major|minor"}]}
+严格输出 JSON：{{"genre":"仙侠|都市|科幻|历史|悬疑|言情|武侠|其他","subGenre":"子类型","themes":["主题1"],"narrativeStyle":"第一人称|第三人称|多视角","toneStyle":"严肃|轻松|幽默|悲情|热血","events":[{{"summary":"简述","importance":"major|minor"}}]}}
 
 ## 文本
 {text}`

@@ -2,6 +2,8 @@
 import express from "express"
 import { corsConfig } from "@/config/cors"
 import { errorHandler } from "@/middleware/error.middleware"
+import { authMiddleware } from "@/middleware/auth.middleware"
+import type { AuthRequest } from "@/middleware/auth.middleware"
 import authRoutes from "@/modules/auth/auth.routes"
 import novelRoutes from "@/modules/novel/novel.routes"
 import taskRoutes from "@/modules/task/task.routes"
@@ -21,15 +23,8 @@ export function createApp() {
     next()
   })
 
-  // ── API 路由 ──
-  app.use("/api/auth", authRoutes)
-  app.use("/api/novels", novelRoutes)
-  app.use("/api/tasks", taskRoutes)
-  app.use("/api/scripts", scriptRoutes)
-  app.use("/api/schema", schemaRoutes)
-
-  // ── SSE 实时推送 (A5) ──
-  app.get("/api/tasks/:id/stream", (req, res) => {
+  // ── SSE 实时推送 (A5) — 必须在 taskRoutes 之前注册 ──
+  app.get("/api/tasks/:id/stream", authMiddleware, (req: AuthRequest, res) => {
     res.writeHead(200, {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache",
@@ -37,13 +32,21 @@ export function createApp() {
     })
 
     const taskId = req.params.id
+    const userId = req.userId
     // [TODO] Redis Pub/Sub 订阅 task:{taskId}:events
-    res.write(`data: ${JSON.stringify({ event: "connected", taskId })}\n\n`)
+    res.write(`data: ${JSON.stringify({ event: "connected", taskId, userId })}\n\n`)
 
     req.on("close", () => {
       // [TODO] 取消 Redis 订阅
     })
   })
+
+  // ── API 路由 ──
+  app.use("/api/auth", authRoutes)
+  app.use("/api/novels", novelRoutes)
+  app.use("/api/tasks", taskRoutes)
+  app.use("/api/scripts", scriptRoutes)
+  app.use("/api/schema", schemaRoutes)
 
   // ── 健康检查 ──
   app.get("/api/health", (_req, res) => {

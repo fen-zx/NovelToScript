@@ -32,21 +32,21 @@ export class TaskController {
 
   async getById(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const result = await taskService.getTaskById(req.params.id)
+      const result = await taskService.getTaskById(req.params.id as string)
       res.json({ code: 0, message: "success", data: result })
     } catch (err) { next(err) }
   }
 
   async retry(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const result = await taskService.retryTask(req.params.id, req.body.mode)
+      const result = await taskService.retryTask(req.params.id as string, req.body.mode)
       res.json({ code: 0, message: "重试已入队", data: result })
     } catch (err) { next(err) }
   }
 
   async delete(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      await taskService.deleteTask(req.params.id)
+      await taskService.deleteTask(req.params.id as string)
       res.json({ code: 0, message: "任务已删除", data: null })
     } catch (err) { next(err) }
   }

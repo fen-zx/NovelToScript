@@ -1,8 +1,41 @@
 # CHANGELOG — 变更记录
 
+## 2026-06-06
+
+### 🐳 Docker 化完善
+
+- **修复**: Docker 构建与运行时多项问题
+- **内容**:
+  - Dockerfile：添加 `prisma.config.ts` 复制，移除 tsc 编译步骤，改用 `tsx src/main.ts` 直接运行
+  - 修复 `.env.docker` 中 `DATABASE_URL` 多余引号导致 Prisma 找不到数据库
+  - `docker-compose.yml`：command 同步更新为 `tsx` 运行方式
+  - 新增 `docker-compose.dev.yml`：开发模式仅启动 Redis + MinIO，后端本地热重载
+- **影响**: Dockerfile, docker-compose.yml, .env.docker
+- **级别**: major
+
+### 🔧 TypeScript 编译修复（15 处）
+
+- **修复文件**: `package.json` + 8 个源文件
+- **修复内容**:
+  - 添加 `yaml` 包到依赖（`yaml-validator.ts` 缺少）
+  - 移除 `bullmq` 中已废弃的 `QueueScheduler` 导入
+  - 4 个 Worker 文件的 ioredis 类型不匹配 → 改用 `redisConnection` (ConnectionOptions)
+  - `auth.service.ts` JWT `expiresIn` 类型断言
+  - `script.controller.ts` / `task.controller.ts` 中 `req.params` 类型为 `string | string[]` → `as string`
+  - `script.service.ts` 中 `prisma.$transaction()` 类型不兼容 → `as any`
+  - `tsx` 和 `prisma` 从 devDependencies 移至 dependencies（生产环境需要）
+- **影响**: package.json, queue-manager.ts, 4 worker 文件, auth.service.ts, 2 controller, script.service.ts
+- **级别**: major
+
+### 📝 文档更新
+
+- **README**: 快速开始新增 Docker Compose 一键启动为首选方案，手动方式保留为备选
+- **PROJECT_STATE**: 产物清单新增 Docker 部署行，Iter-1 目标追加 Docker 化
+- **CHANGELOG**: 本文件
+
 ## 2026-06-05
 
-### 📋 项目初始化
+### �📋 项目初始化
 
 - **项目**: 创建项目 `NovelToScript` — AI小说转剧本工具
 - **影响**: 全局
@@ -476,9 +509,11 @@ npm run db:migrate   # Prisma 迁移
 **修复**：validate.middleware.ts — 对 `source === "query"` 改用 `Object.defineProperty(req, "query", { value: data })` 强制覆盖原型 getter。
 
 **影响文件**：
+
 - validate.middleware.ts
 
 **受益路由**（同中间件修复覆盖）：
+
 - `GET /api/tasks` — 任务列表查询
 - `GET /api/scripts/:id/export` — 剧本导出
 - `GET /api/auth/register` — 账号可用性检查

@@ -1,6 +1,6 @@
 // Cleanup Worker — 定期清理过期文件
 import { Worker } from "bullmq"
-import { redis } from "@/shared/cache/redis"
+import { redisConnection } from "@/shared/queue/queue-manager"
 import { minioClient } from "@/shared/storage/minio"
 import { logger } from "@/utils/logger"
 
@@ -33,5 +33,5 @@ export const cleanupWorker = new Worker(
     logger.info(`[Cleanup] Done: ${deletedCount} files, ${(freedBytes / 1024 / 1024).toFixed(1)}MB freed`)
     return { deletedCount, freedBytes }
   },
-  { connection: redis, concurrency: 1, lockDuration: 300_000 },
+  { connection: redisConnection, concurrency: 1, lockDuration: 300_000 },
 )

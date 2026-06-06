@@ -4,6 +4,7 @@ import { PromptTemplate } from "@langchain/core/prompts"
 import { StringOutputParser } from "@langchain/core/output_parsers"
 import { RunnableSequence } from "@langchain/core/runnables"
 import { analysisModel, creativeModel, generationModel } from "@/config/deepseek"
+import { chunkNovel, type TextChunk } from "./text-chunker"
 import { NOVEL_ANALYSIS_PROMPT } from "./prompts/novel-analysis.prompt"
 import { CHARACTER_EXTRACTION_PROMPT } from "./prompts/character-extraction.prompt"
 import { PLOT_ANALYSIS_PROMPT } from "./prompts/plot-analysis.prompt"
@@ -22,20 +23,34 @@ export class AgentPipeline extends EventEmitter {
     super()
   }
 
-  async run() {
-    // Step 1: Novel Analysis (分片并行 — 此处简化为单次调用)
+  async run(fullText: string) {
+    const chunks = chunkNovel(fullText)
+
+    // Step 1: Novel Analysis — 分片并行分析，合并结果
     this.currentStep = 1
     this.emit("agent-start", "NovelAnalysis")
-    const analysisResult = await this.invokeChain(NOVEL_ANALYSIS_PROMPT, { text: "[TODO: 分片文本]" }, analysisModel)
-    this.results.analysis = this.parseJSON(analysisResult)
+    const analysisResults = await Promise.all(
+      chunks.map((chunk, i) =>
+        this.invokeChain(NOVEL_ANALYSIS_PROMPT, {
+          text: chunk.text,
+          part: `第${i + 1}/${chunks.length}部分`,
+          chapterRef: chunk.chapterRef || "正文",
+        }, analysisModel).then(r => ({ ...this.parseJSON(r), chunkIndex: i }))
+      )
+    )
+    this.results.analysis = this.mergeAnalysis(analysisResults, chunks)
     this.emit("agent-done", "NovelAnalysis", this.results.analysis)
+
+    // 构建全文摘要（取前 6000 字 + 分析结果）
+    const summary = fullText.slice(0, 6000)
+    const analysisSummary = JSON.stringify(this.results.analysis)
 
     // Step 2: Character Extraction
     this.currentStep = 2
     this.emit("agent-start", "CharacterExtraction")
     const charResult = await this.invokeChain(CHARACTER_EXTRACTION_PROMPT, {
-      summary: JSON.stringify(this.results.analysis),
-      text: "[TODO: 全文摘要]",
+      summary: analysisSummary,
+      text: summary,
     }, analysisModel)
     this.results.characters = this.parseJSON(charResult)
     this.emit("agent-done", "CharacterExtraction", this.results.characters)
@@ -45,7 +60,7 @@ export class AgentPipeline extends EventEmitter {
     this.emit("agent-start", "PlotAnalysis")
     const plotResult = await this.invokeChain(PLOT_ANALYSIS_PROMPT, {
       characters: JSON.stringify(this.results.characters),
-      summary: JSON.stringify(this.results.analysis),
+      summary: analysisSummary,
     }, analysisModel)
     this.results.plot = this.parseJSON(plotResult)
     this.emit("agent-done", "PlotAnalysis", this.results.plot)
@@ -75,7 +90,7 @@ export class AgentPipeline extends EventEmitter {
     this.emit("agent-start", "YamlValidation")
     const validResult = await this.invokeChain(YAML_VALIDATION_PROMPT, {
       yaml: this.results.yaml,
-      schemaRules: "[TODO: Schema rules]",
+      schemaRules: "必填字段: title, scenes。场景必填: sceneNumber, location, dialogues",
     }, analysisModel)
     const validation = this.parseJSON(validResult)
     this.emit("agent-done", "YamlValidation", validation)
@@ -85,6 +100,26 @@ export class AgentPipeline extends EventEmitter {
       yamlContent: this.results.yaml,
       characters: this.results.characters?.characters || [],
       scenes: this.results.scenes?.scenes || [],
+    }
+  }
+
+  /** 合并多个分片的分析结果 */
+  private mergeAnalysis(results: any[], chunks: TextChunk[]) {
+    const genres = new Set<string>()
+    const themes = new Set<string>()
+    const keyEvents: string[] = []
+    for (const r of results) {
+      if (r.genre) genres.add(r.genre)
+      if (r.themes) (Array.isArray(r.themes) ? r.themes : [r.themes]).forEach((t: string) => themes.add(t))
+      if (r.keyEvents) keyEvents.push(...(Array.isArray(r.keyEvents) ? r.keyEvents : [r.keyEvents]))
+    }
+    return {
+      genre: [...genres][0] || "未分类",
+      themes: [...themes],
+      style: results[0]?.style || "未识别",
+      outline: results.map(r => r.outline || r.summary || "").join("\n"),
+      keyEvents: keyEvents.slice(0, 20),
+      totalChunks: chunks.length,
     }
   }
 
