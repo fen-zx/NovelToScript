@@ -12,34 +12,34 @@
 
 ### 产物清单
 
-| 产物              | 路径                                 | 状态                                   |
-| ----------------- | ------------------------------------ | -------------------------------------- |
-| PRD 需求文档      | `docs/prem/PRD.md`                   | ✅ 完成（14 问全部确认）               |
-| 系统设计          | `docs/prem/DESIGN.md`                | ✅ 完成                                |
-| 架构决策          | `docs/prem/DECISIONS.md`             | ✅ 完成（14 条 D-001~D-014）           |
-| 页面规格          | `docs/prem/PAGE_SPECS.md`            | ✅ 完成                                |
-| API 规格          | `docs/prem/API_SPECS.md`             | ✅ 完成（16 个接口）                   |
-| 页面设计          | `docs/prem/PAGE_DESIGN.md`           | ✅ 完成（7 页完整设计）                |
-| 布局评审          | `docs/prem/LAYOUT_REVIEW.md`         | ✅ 完成（79/100）                      |
-| 低保真原型        | `docs/prem/LOWFI_PROTOTYPE.md`       | ✅ 完成                                |
-| HTML 原型         | `prototype/index.html`               | ✅ 完成（毛玻璃风格）                  |
-| 后端架构          | `docs/prem/ARCHITECTURE.md`          | ✅ 完成（18 章节 + 前后端同步）        |
-| Service 层设计    | `docs/prem/SERVICE_SPECS.md`         | ✅ 完成（11 Service + 8 事务点）       |
-| Repository 层设计 | `docs/prem/REPOSITORY_SPECS.md`      | ✅ 完成（9 Repository + 分页规范）     |
-| 队列架构          | `docs/prem/QUEUE_SPECS.md`           | ✅ 完成（4 队列 + 4 Worker）           |
-| AI 工作流         | `docs/prem/AI_WORKFLOW.md`           | ✅ 完成（7 Agent + 双温策略）          |
-| 数据库设计        | `docs/prem/DATABASE_SCHEMA.md`       | ✅ 完成（9 表 + 10 索引）              |
-| Prisma Schema     | `backend/prisma/schema.prisma`       | ✅ 完成（9 表 + 4 枚举 + 迁移）        |
-| 组件方案          | `docs/prem/COMPONENT_SPECS.md`       | ✅ 完成（43 组件）                     |
-| 实现蓝图          | `docs/prem/PAGE_IMPLEMENTATION.md`   | ✅ 完成（7页路由+数据流）              |
-| 前端架构          | `docs/prem/FRONTEND_ARCHITECTURE.md` | ✅ 完成（16 章节）                     |
-| 前端项目          | `frontend/`                          | ✅ 完成（7 页 + 7 组件 + 3 Store）     |
-| 后端项目          | `backend/`                           | ✅ 完成（66 文件 + 5 模块 + 4 Worker） |
-| Docker 部署       | `docker-compose.yml`                 | ✅ 完成（3 服务编排 + 健康检查）       |
-| Docker 开发模式   | `docker-compose.dev.yml`             | ✅ 完成（仅 Redis + MinIO）            |
-| TypeScript 编译   | `backend/tsconfig.json`              | ✅ 通过（15 处修复，0 错误）           |
-| CHANGELOG         | `docs/prem/CHANGELOG.md`             | ✅ 完成（2 日完整记录）                |
-| 任务看板          | `docs/prem/TASKS.md`                 | ✅ 完成（48 任务拆解）                 |
+| 产物              | 路径                                 | 状态                                       |
+| ----------------- | ------------------------------------ | ------------------------------------------ |
+| PRD 需求文档      | `docs/prem/PRD.md`                   | ✅ 完成（14 问全部确认）                   |
+| 系统设计          | `docs/prem/DESIGN.md`                | ✅ 完成                                    |
+| 架构决策          | `docs/prem/DECISIONS.md`             | ✅ 完成（14 条 D-001~D-014）               |
+| 页面规格          | `docs/prem/PAGE_SPECS.md`            | ✅ 完成                                    |
+| API 规格          | `docs/prem/API_SPECS.md`             | ✅ 完成（16 个接口）                       |
+| 页面设计          | `docs/prem/PAGE_DESIGN.md`           | ✅ 完成（7 页完整设计）                    |
+| 布局评审          | `docs/prem/LAYOUT_REVIEW.md`         | ✅ 完成（79/100）                          |
+| 低保真原型        | `docs/prem/LOWFI_PROTOTYPE.md`       | ✅ 完成                                    |
+| HTML 原型         | `prototype/index.html`               | ✅ 完成（毛玻璃风格）                      |
+| 后端架构          | `docs/prem/ARCHITECTURE.md`          | ✅ 完成（18 章节 + 前后端同步）            |
+| Service 层设计    | `docs/prem/SERVICE_SPECS.md`         | ✅ 完成（11 Service + 8 事务点）           |
+| Repository 层设计 | `docs/prem/REPOSITORY_SPECS.md`      | ✅ 完成（9 Repository + 分页规范）         |
+| 队列架构          | `docs/prem/QUEUE_SPECS.md`           | ✅ 完成（4 队列 + 4 Worker）               |
+| AI 工作流         | `docs/prem/AI_WORKFLOW.md`           | ✅ 完成（8 Agent + 三温策略 + 忠实度校验） |
+| 数据库设计        | `docs/prem/DATABASE_SCHEMA.md`       | ✅ 完成（9 表 + 10 索引）                  |
+| Prisma Schema     | `backend/prisma/schema.prisma`       | ✅ 完成（9 表 + 4 枚举 + 迁移）            |
+| 组件方案          | `docs/prem/COMPONENT_SPECS.md`       | ✅ 完成（43 组件）                         |
+| 实现蓝图          | `docs/prem/PAGE_IMPLEMENTATION.md`   | ✅ 完成（7页路由+数据流）                  |
+| 前端架构          | `docs/prem/FRONTEND_ARCHITECTURE.md` | ✅ 完成（16 章节）                         |
+| 前端项目          | `frontend/`                          | ✅ 完成（7 页 + 7 组件 + 3 Store）         |
+| 后端项目          | `backend/`                           | ✅ 完成（66 文件 + 5 模块 + 4 Worker）     |
+| Docker 部署       | `docker-compose.yml`                 | ✅ 完成（3 服务编排 + 健康检查）           |
+| Docker 开发模式   | `docker-compose.dev.yml`             | ✅ 完成（仅 Redis + MinIO）                |
+| TypeScript 编译   | `backend/tsconfig.json`              | ✅ 通过（15 处修复，0 错误）               |
+| CHANGELOG         | `docs/prem/CHANGELOG.md`             | ✅ 完成（2 日完整记录）                    |
+| 任务看板          | `docs/prem/TASKS.md`                 | ✅ 完成（48 任务拆解）                     |
 
 ---
 

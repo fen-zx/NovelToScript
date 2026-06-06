@@ -1,16 +1,17 @@
-// AI Service — 7 Agent 流水线编排
+// AI Service — 7 Agent 流水线编排 (含忠实度校验)
 import { EventEmitter } from "events"
 import { PromptTemplate } from "@langchain/core/prompts"
 import { StringOutputParser } from "@langchain/core/output_parsers"
 import { RunnableSequence } from "@langchain/core/runnables"
 import { analysisModel, creativeModel, generationModel } from "@/config/deepseek"
-import { chunkNovel, type TextChunk } from "./text-chunker"
+import { chunkNovel, buildSmartSummary, type TextChunk } from "./text-chunker"
 import { NOVEL_ANALYSIS_PROMPT } from "./prompts/novel-analysis.prompt"
 import { CHARACTER_EXTRACTION_PROMPT } from "./prompts/character-extraction.prompt"
 import { PLOT_ANALYSIS_PROMPT } from "./prompts/plot-analysis.prompt"
 import { SCENE_PLANNING_PROMPT } from "./prompts/scene-planning.prompt"
 import { SCRIPT_GENERATION_PROMPT } from "./prompts/script-generation.prompt"
 import { YAML_VALIDATION_PROMPT } from "./prompts/yaml-validation.prompt"
+import { FAITHFULNESS_CHECK_PROMPT } from "./prompts/faithfulness-check.prompt"
 
 export class AgentPipeline extends EventEmitter {
   public currentStep = 0
@@ -41,11 +42,11 @@ export class AgentPipeline extends EventEmitter {
     this.results.analysis = this.mergeAnalysis(analysisResults, chunks)
     this.emit("agent-done", "NovelAnalysis", this.results.analysis)
 
-    // 构建全文摘要（取前 6000 字 + 分析结果）
-    const summary = fullText.slice(0, 6000)
+    // 🔧 修复: 智能摘要 — 从全文均匀采样 20000 字，而非仅取前 6000 字
+    const summary = buildSmartSummary(fullText, 20000)
     const analysisSummary = JSON.stringify(this.results.analysis)
 
-    // Step 2: Character Extraction
+    // Step 2: Character Extraction — 接收完整采样文本
     this.currentStep = 2
     this.emit("agent-start", "CharacterExtraction")
     const charResult = await this.invokeChain(CHARACTER_EXTRACTION_PROMPT, {
@@ -55,32 +56,34 @@ export class AgentPipeline extends EventEmitter {
     this.results.characters = this.parseJSON(charResult)
     this.emit("agent-done", "CharacterExtraction", this.results.characters)
 
-    // Step 3: Plot Analysis
+    // Step 3: Plot Analysis — 接收完整采样文本
     this.currentStep = 3
     this.emit("agent-start", "PlotAnalysis")
     const plotResult = await this.invokeChain(PLOT_ANALYSIS_PROMPT, {
       characters: JSON.stringify(this.results.characters),
-      summary: analysisSummary,
+      summary,
     }, analysisModel)
     this.results.plot = this.parseJSON(plotResult)
     this.emit("agent-done", "PlotAnalysis", this.results.plot)
 
-    // Step 4: Scene Planning
+    // 🔧 修复: Step 4 — 注入原文采样，防止场景凭空编造
     this.currentStep = 4
     this.emit("agent-start", "ScenePlanning")
     const sceneResult = await this.invokeChain(SCENE_PLANNING_PROMPT, {
       plotAnalysis: JSON.stringify(this.results.plot),
       characters: JSON.stringify(this.results.characters),
+      sourceText: summary,
     }, creativeModel)
     this.results.scenes = this.parseJSON(sceneResult)
     this.emit("agent-done", "ScenePlanning", this.results.scenes)
 
-    // Step 5: Script Generation
+    // 🔧 修复: Step 5 — 注入原文采样，对白从原文提取
     this.currentStep = 5
     this.emit("agent-start", "ScriptGeneration")
     const yamlResult = await this.invokeChain(SCRIPT_GENERATION_PROMPT, {
       scenes: JSON.stringify(this.results.scenes),
       characters: JSON.stringify(this.results.characters),
+      sourceText: summary,
     }, generationModel)
     this.results.yaml = this.extractYaml(yamlResult)
     this.emit("agent-done", "ScriptGeneration", { yamlContent: this.results.yaml })
@@ -95,11 +98,25 @@ export class AgentPipeline extends EventEmitter {
     const validation = this.parseJSON(validResult)
     this.emit("agent-done", "YamlValidation", validation)
 
+    // 🔧 新增 Step 6.5: 忠实度校验 — 比对剧本与原文，检测编造内容
+    this.currentStep = 6.5
+    this.emit("agent-start", "FaithfulnessCheck")
+    const faithResult = await this.invokeChain(FAITHFULNESS_CHECK_PROMPT, {
+      yaml: this.results.yaml,
+      sourceText: summary,
+    }, analysisModel)
+    const faithfulness = this.parseJSON(faithResult)
+    this.emit("agent-done", "FaithfulnessCheck", faithfulness)
+
+    // 记录忠实度结果供 Worker 使用
+    this.results.faithfulness = faithfulness
+
     return {
       title: this.results.analysis?.genre || "未命名剧本",
       yamlContent: this.results.yaml,
       characters: this.results.characters?.characters || [],
       scenes: this.results.scenes?.scenes || [],
+      faithfulness,
     }
   }
 

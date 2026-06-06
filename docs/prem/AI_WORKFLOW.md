@@ -1,7 +1,7 @@
 # AI_WORKFLOW — LangChain + DeepSeek AI 工作流
 
 > 基于 PRD Agent定义 + ARCHITECTURE AI工作流 + QUEUE_SPECS 生成
-> LLM: DeepSeek v2 | 框架: LangChain.js 0.3.x | 日期: 2026-06-05
+> LLM: DeepSeek v2 | 框架: LangChain.js 0.3.x | 日期: 2026-06-06
 
 ---
 
@@ -19,24 +19,28 @@
 │              输出: { genre, themes, style, outline } │
 │  ──────────────────────────────────────────────      │
 │  Step 2 ──► CharacterExtractionChain                │
-│              输入: 全文 + 分析结果                   │
+│              输入: 智能摘要(20K字) + 分析结果        │
 │              输出: [{ name, role, traits, ... }]     │
 │  ──────────────────────────────────────────────      │
 │  Step 3 ──► PlotAnalysisChain                       │
-│              输入: 全文 + 人物列表                   │
+│              输入: 智能摘要 + 人物列表               │
 │              输出: { plots, conflicts, climax }      │
 │  ──────────────────────────────────────────────      │
 │  Step 4 ──► ScenePlanningChain                      │
-│              输入: 情节 + 人物                       │
+│              输入: 情节 + 人物 + 原文采样            │
 │              输出: [{ sceneNumber, location, ... }]  │
 │  ──────────────────────────────────────────────      │
 │  Step 5 ──► ScriptGenerationChain                   │
-│              输入: 场景规划 + 人物 + Schema          │
+│              输入: 场景规划 + 人物 + 原文采样        │
 │              输出: YAML 剧本                         │
 │  ──────────────────────────────────────────────      │
 │  Step 6 ──► YamlValidationChain                     │
 │              输入: YAML + Schema 规则                │
 │              输出: { valid, errors[] }               │
+│  ──────────────────────────────────────────────      │
+│  Step 6.5 FaithfulnessCheck (忠实度校验)            │
+│              输入: YAML + 原文采样                   │
+│              输出: { faithful, score, issues[] }     │
 │  ──────────────────────────────────────────────      │
 │  Step 7 ──► ScriptPolishChain (可选)                │
 │              输入: YAML + 风格                       │
@@ -52,17 +56,18 @@
 
 ## 二、任务拆解
 
-| 步骤 | Chain                      | 输入                     | 输出格式 | 预计 Token    | 预计耗时 |
-| ---- | -------------------------- | ------------------------ | -------- | ------------- | -------- |
-| 1    | `NovelAnalysisChain`       | 分片文本 × N             | JSON     | 8K in/1K out  | ~3s × N  |
-| 2    | `CharacterExtractionChain` | 全文摘要 + 分析结果      | JSON     | 6K in/2K out  | ~15s     |
-| 3    | `PlotAnalysisChain`        | 全文摘要 + 人物列表      | JSON     | 6K in/2K out  | ~45s     |
-| 4    | `ScenePlanningChain`       | 情节摘要 + 人物          | JSON     | 6K in/3K out  | ~60s     |
-| 5    | `ScriptGenerationChain`    | 场景规划 + 人物 + Schema | YAML     | 8K in/8K out  | ~90s     |
-| 6    | `YamlValidationChain`      | YAML + Schema 规则       | JSON     | 4K in/500 out | ~2s      |
-| 7    | `ScriptPolishChain`        | YAML + 风格选择          | YAML     | 8K in/4K out  | ~30s     |
+| 步骤 | Chain                      | 输入                       | 输出格式 | 预计 Token    | 预计耗时 |
+| ---- | -------------------------- | -------------------------- | -------- | ------------- | -------- |
+| 1    | `NovelAnalysisChain`       | 分片文本 × N               | JSON     | 8K in/1K out  | ~3s × N  |
+| 2    | `CharacterExtractionChain` | 智能摘要(20K) + 分析结果   | JSON     | 12K in/2K out | ~15s     |
+| 3    | `PlotAnalysisChain`        | 智能摘要(20K) + 人物列表   | JSON     | 12K in/2K out | ~45s     |
+| 4    | `ScenePlanningChain`       | 情节摘要 + 人物 + 原文采样 | JSON     | 10K in/3K out | ~60s     |
+| 5    | `ScriptGenerationChain`    | 场景规划 + 人物 + 原文采样 | YAML     | 12K in/8K out | ~90s     |
+| 6    | `YamlValidationChain`      | YAML + Schema 规则         | JSON     | 4K in/500 out | ~2s      |
+| 6.5  | `FaithfulnessCheck`        | YAML + 原文采样            | JSON     | 8K in/1K out  | ~10s     |
+| 7    | `ScriptPolishChain`        | YAML + 风格选择            | YAML     | 8K in/4K out  | ~30s     |
 
-> **串行总耗时**: ~245s (不含分片并行) | **超时**: 600s (含重试缓冲)
+> **串行总耗时**: ~255s (不含分片并行) | **超时**: 600s (含重试缓冲)
 
 ---
 
@@ -128,9 +133,81 @@ function chunkNovel(fullText: string, chapters: ChapterBoundary[]): Chunk[] {
 }
 ```
 
+### 智能摘要策略 (2026-06-06 新增)
+
+为解决"仅取前 6000 字导致后续步骤看不到全文"的 AI 幻觉问题，引入 `buildSmartSummary()`：
+
+```ts
+// backend/src/modules/ai/text-chunker.ts
+
+/**
+ * 从全文均匀采样，而非仅截取开头
+ * 策略: 开头30% + 中间40%(均匀4段) + 结尾30%
+ * 默认 maxChars=20000 (旧版仅 6000)
+ */
+function buildSmartSummary(fullText: string, maxChars: number = 20000): string {
+  if (fullText.length <= maxChars) return fullText;
+
+  const headLen = Math.floor(maxChars * 0.3);
+  const tailLen = Math.floor(maxChars * 0.3);
+  const midLen = maxChars - headLen - tailLen;
+
+  const head = fullText.slice(0, headLen);
+  const tail = fullText.slice(fullText.length - tailLen);
+
+  // 中间均匀采样 4 段
+  const sampleCount = 4;
+  const sampleSize = Math.floor(midLen / sampleCount);
+  const step = Math.floor((fullText.length - headLen - tailLen) / sampleCount);
+
+  const midSamples: string[] = [];
+  for (let i = 0; i < sampleCount; i++) {
+    midSamples.push(
+      fullText.slice(headLen + i * step, headLen + i * step + sampleSize),
+    );
+  }
+
+  return head + "\n...\n" + midSamples.join("\n...\n") + "\n...\n" + tail;
+}
+```
+
+| 参数               | 旧值           | 新值              | 说明                        |
+| ------------------ | -------------- | ----------------- | --------------------------- |
+| 采样策略           | 仅取前 6000 字 | 均匀采样 20000 字 | 覆盖全文起中结              |
+| 中间段采样数       | 无             | 4 段              | 每段约 2000 字              |
+| Steps 4-5 原文注入 | 无             | 注入智能摘要      | 场景规划/剧本生成可参照原文 |
+
 ---
 
 ## 四、Prompt 设计
+
+### 4.0 忠实约束规范 (2026-06-06 新增)
+
+所有 Prompt 均添加以下两层忠实约束，防止 AI 凭空编造和训练数据泄露：
+
+**第一层：反编造**
+
+```
+## ⚠️ 重要约束
+严格仅基于下面提供的文本内容进行[分析/提取/生成]，
+不得编造、推测或添加文本中不存在的信息。
+```
+
+**第二层：反训练数据泄露 (2026-06-06 新增)**
+
+```
+禁止使用你对知名作品的先验知识：
+即使你认出这段文本来自某部知名作品，也必须仅基于提供的片段本身分析，
+不要使用训练数据中关于该作品的作者、角色、情节等信息。
+```
+
+各步骤具体约束：
+
+- **NovelAnalysis**: "genre 从片段特征判断，不要因认出作品填已知分类"
+- **CharacterExtraction**: "只提取本次片段中实际出现的角色，不添加记忆中该作品的其他角色"
+- **PlotAnalysis**: "不用训练数据中的后续情节填补"
+- **ScenePlanning**: "不添加记忆中该作品的场景或情节"
+- **ScriptGeneration**: "title 从原文提炼禁止使用已知作品名，author 原文未提必须填'未知'"
 
 ### 4.1 NovelAnalysisChain — 小说分析
 
@@ -139,24 +216,19 @@ function chunkNovel(fullText: string, chapters: ChapterBoundary[]): Chunk[] {
 
 export const NOVEL_ANALYSIS_PROMPT = `你是一位资深文学编辑。请分析以下小说片段，提取关键信息。
 
+## ⚠️ 重要约束
+1. 严格仅基于下面提供的文本内容进行分析，不得编造、推测或添加文本中不存在的信息
+2. **禁止使用你对知名小说的先验知识**：即使你认出这段文本来自某部知名作品，也必须仅基于提供的片段本身进行分析，不要使用你的训练数据中关于该作品的任何信息
+3. 如果某项信息在文本中无法确定，标注为"未知"或"未明确"
+4. **genre 字段**：仅根据片段实际的文学特征判断类型，不要因为你认出了作品就填写你知道的分类
+
 ## 任务
 1. 识别小说的文学风格和类型 (genre)
 2. 归纳核心主题 (themes)
-3. 描述叙事风格特点 (narrativeStyle)
-4. 如果片段涉及情节，概括主要事件
+3. 描述叙事风格特点
 
 ## 输出格式
-严格输出以下 JSON，不要包含任何其他文字：
-{
-  "genre": "仙侠|都市|科幻|历史|悬疑|言情|武侠|其他",
-  "subGenre": "更具体的子类型",
-  "themes": ["主题1", "主题2"],
-  "narrativeStyle": "第一人称|第三人称|多视角",
-  "toneStyle": "严肃|轻松|幽默|悲情|热血",
-  "events": [
-    { "summary": "事件简述", "importance": "major|minor" }
-  ]
-}
+严格输出 JSON：{{"genre":"仙侠|都市|科幻|历史|悬疑|言情|武侠|其他","subGenre":"子类型","themes":["主题1"],"narrativeStyle":"第一人称|第三人称|多视角","toneStyle":"严肃|轻松|幽默|悲情|热血","events":[{{"summary":"简述","importance":"major|minor"}}]}}
 
 ## 文本
 {text}`;
@@ -169,33 +241,21 @@ export const NOVEL_ANALYSIS_PROMPT = `你是一位资深文学编辑。请分析
 
 export const CHARACTER_EXTRACTION_PROMPT = `你是一位专业的剧本角色分析师。请从小说中提取所有主要角色。
 
+## ⚠️ 重要约束
+1. 严格仅基于下面提供的文本内容提取角色。不得凭空编造角色、关系或特征
+2. **禁止使用你对知名角色的先验知识**：即使你认出文本来自某知名作品，也只提取本次提供的片段中实际出现的角色，不要添加训练数据中你知道但文本中未出现的角色
+3. 每个角色必须能在原文中找到明确依据。如果无法确定某个字段，使用"未知"
+
 ## 任务
-1. 识别所有有名有姓的角色
-2. 判断角色类型（主角/反派/配角）
-3. 描述外貌、性格、动机
-4. 分析角色之间的关系
+识别所有有名有姓的角色，判断类型（主角/反派/配角），描述外貌性格动机，分析关系。
 
 ## 输出格式
-严格输出以下 JSON：
-{
-  "characters": [
-    {
-      "name": "角色名",
-      "role": "PROTAGONIST|ANTAGONIST|SUPPORTING",
-      "description": "外貌、性格、背景的简短描述 (50-100字)",
-      "traits": ["性格特征1", "性格特征2", "性格特征3"],
-      "motivation": "角色的核心动机",
-      "relationships": [
-        { "with": "另一角色名", "type": "师徒|挚友|恋人|敌对|父子|母女|兄弟" }
-      ]
-    }
-  ]
-}
+严格输出 JSON：{{"characters":[{{"name":"角色名","role":"PROTAGONIST|ANTAGONIST|SUPPORTING","description":"50-100字描述","traits":["特征1"],"motivation":"动机","relationships":[{{"with":"另一角色","type":"师徒|挚友|恋人|敌对|父子"}}]}}]}}
 
 ## 小说摘要
 {summary}
 
-## 小说全文（请重点扫描对话和描写部分）
+## 小说全文(采样)
 {text}`;
 ```
 
@@ -204,36 +264,20 @@ export const CHARACTER_EXTRACTION_PROMPT = `你是一位专业的剧本角色分
 ```ts
 // prompts/plot-analysis.prompt.ts
 
-export const PLOT_ANALYSIS_PROMPT = `你是一位剧本策划。请分析小说的情节结构，为剧本改编做准备。
+export const PLOT_ANALYSIS_PROMPT = `你是一位剧本策划。请分析小说的情节结构。
+
+1. 严格仅基于下面提供的小说摘要分析情节。不得凭空编造情节、冲突或结局
+2. **禁止使用你对知名小说的先验知识**：即使认出文本来源，也只分析提供的摘要内容，不要用训练数据中的后续情节来填补
+3. 如果摘要中某阶段信息不完整，标注"原文未涉及"而非推测补充或结局。
+如果摘要中某阶段信息不完整，标注"原文未涉及"而非推测补充。
 
 ## 任务
-1. 识别主线情节和支线情节
-2. 找出关键冲突和转折点
-3. 定位高潮和结局
+识别主线/支线、关键冲突/转折点、高潮和结局。
 
 ## 输出格式
-严格输出以下 JSON：
-{
-  "mainPlot": {
-    "summary": "主线情节概述 (100-200字)",
-    "stages": [
-      { "stage": "开端|发展|转折|高潮|结局", "description": "阶段描述", "chapterRange": "第X章-第Y章" }
-    ]
-  },
-  "subPlots": [
-    { "summary": "支线概述", "relatedCharacters": ["角色名"] }
-  ],
-  "conflicts": [
-    { "type": "人物冲突|内心冲突|环境冲突", "description": "冲突描述", "participants": ["角色1", "角色2"] }
-  ],
-  "turningPoints": [
-    { "description": "转折点描述", "impact": "high|medium", "chapter": "第X章" }
-  ],
-  "climax": { "description": "高潮描述", "chapter": "第X章" },
-  "ending": { "type": "圆满|悲剧|开放|反转", "description": "结局描述" }
-}
+严格输出 JSON：{{"mainPlot":{{"summary":"主线概述","stages":[{{"stage":"开端|发展|转折|高潮|结局","description":"描述","chapterRange":"第X-Y章"}}]}},"subPlots":[{{"summary":"概述","relatedCharacters":["角色"]}}],"conflicts":[{{"type":"人物冲突|内心冲突|环境冲突","description":"描述","participants":["角色"]}}],"turningPoints":[{{"description":"转折","impact":"high|medium","chapter":"第X章"}}],"climax":{{"description":"高潮","chapter":"第X章"}},"ending":{{"type":"圆满|悲剧|开放|反转","description":"结局"}}}}
 
-## 人物列表
+## 人物
 {characters}
 
 ## 小说摘要
@@ -245,35 +289,26 @@ export const PLOT_ANALYSIS_PROMPT = `你是一位剧本策划。请分析小说�
 ```ts
 // prompts/scene-planning.prompt.ts
 
-export const SCENE_PLANNING_PROMPT = `你是一位影视场景规划师。请将小说情节拆解为具体的剧本场景。
+export const SCENE_PLANNING_PROMPT = `你是一位影视场景规划师。请将小说情节拆解为剧本场景。
+
+1. 严格仅基于下面提供的情节分析和原文片段来规划场景。不得凭空添加不存在的场景、地点或人物。每个场景必须能在情节分析或原文中找到依据
+2. **禁止使用你对知名作品的先验知识**：不要添加训练数据中你知道但本次未提供的场景或情节
+不得凭空添加不存在的场景、地点或人物。每个场景必须能在情节分析或原文中找到依据。
 
 ## 任务
-1. 按时间/空间变化划分场景
-2. 每个场景标注地点、时间、参与者、场景目标
-3. 确保场景之间有逻辑递进
+按时间/空间划分场景，标注地点、时间、参与者、目标。
 
 ## 输出格式
-严格输出以下 JSON：
-{
-  "scenes": [
-    {
-      "sceneNumber": 1,
-      "location": "场景地点",
-      "time": "时间描述 (如: 清晨/午后/深夜 或 具体时间)",
-      "participants": ["角色1", "角色2"],
-      "goal": "本场景要达成的叙事目标 (30字内)",
-      "summary": "场景内容简述 (50-100字)",
-      "sourceChapter": "第X章",
-      "mood": "紧张|温馨|悲伤|欢乐|悬疑|平静|激烈"
-    }
-  ]
-}
+严格输出 JSON：{{"scenes":[{{"sceneNumber":1,"location":"地点","time":"时间描述","participants":["角色"],"goal":"叙事目标(30字)","summary":"内容简述(50-100字)","sourceChapter":"第X章","mood":"紧张|温馨|悲伤|欢乐|悬疑|平静|激烈"}}]}}
 
 ## 情节分析
 {plotAnalysis}
 
-## 人物列表
-{characters}`;
+## 人物
+{characters}
+
+## 原文参考(采样)
+{sourceText}`;
 ```
 
 ### 4.5 ScriptGenerationChain — 剧本生成
@@ -281,51 +316,74 @@ export const SCENE_PLANNING_PROMPT = `你是一位影视场景规划师。请将
 ```ts
 // prompts/script-generation.prompt.ts
 
-export const SCRIPT_GENERATION_PROMPT = `你是一位专业编剧。请根据场景规划和人物信息，生成完整的 YAML 格式剧本。
+export const SCRIPT_GENERATION_PROMPT = `你是一位专业编剧。请根据场景规划和人物信息，生成完整 YAML 格式剧本。
+
+## ⚠️ 重要约束
+1. 严格仅基于下面提供的场景规划、人物信息和原文参考生成剧本。每个对白、动作、情节必须能在原文参考或场景规划中找到明确依据
+2. **禁止使用你对知名作品的先验知识**：不要尝试识别这是哪部小说，不要填写你在训练数据中学到的作者名或书名。title 必须从原文内容中提取（如无明确标题则用主角名+核心事件命名），author 在原文未明确提及时必须填"未知"
+3. 不得凭空编造对话内容、情节转折或角色互动
 
 ## 格式要求
-严格遵循以下 YAML Schema 输出：
-
 \`\`\`yaml
-title: 剧本标题
+title: 剧本标题（从原文提炼，禁止使用已知作品名）
 metadata:
-  author: 原作者
+  author: 原作者（原文未提则填"未知"）
   adaptedBy: AI
   genre: 类型
-  totalScenes: 场景总数
+  totalScenes: N
 scenes:
   - sceneNumber: 1
     location: 地点
     time: 时间
-    participants:
-      - 角色名
-    description: 场景环境描述
+    participants: [角色]
+    description: 环境描述
     dialogues:
-      - speaker: 角色名
-        text: 对白内容
-        action: (可选) 动作描述
-        emotion: (可选) 情感标注
-    stageDirections:
-      - 舞台指示/镜头指示
+      - speaker: 角色
+        text: 对白
+        action: 动作(可选)
+        emotion: 情感(可选)
+    stageDirections: [指示]
 \`\`\`
 
-## 创作要求
-1. 对白要符合角色性格特征
-2. 保留小说的核心冲突和情感张力
-3. 适当添加舞台指示增强画面感
-4. 每场景对白不少于 3 段
-
-## Schema 参考
-{schemaRef}
+## 要求
+对白符合作格，保留核心冲突和情感张力，每场景不少于3段对白。
+对白应尽可能从原文参考中提取原文对话。
 
 ## 场景规划
 {scenes}
 
-## 人物列表
-{characters}`;
+## 人物
+{characters}
+
+## 原文参考(对应场景的原文片段)
+{sourceText}`;
 ```
 
-### 4.6 YamlValidationChain — YAML 校验
+### 4.6 FaithfulnessCheck — 忠实度校验 (2026-06-06 新增)
+
+```ts
+// prompts/faithfulness-check.prompt.ts
+
+export const FAITHFULNESS_CHECK_PROMPT = `你是一位严格的剧本审核员。请比对生成的剧本和小说原文，检查剧本中是否存在原文中没有的内容。
+
+## 检查项
+1. 角色: 剧本中出现的角色是否都在原文中存在？有无凭空添加的角色？
+2. 对白: 剧本中的对话内容是否在原文中有依据？有无完全编造的对话？
+3. 情节: 剧本中的情节走向是否与原文一致？
+4. 场景: 场景地点/时间是否与原文吻合？
+5. 关系: 角色之间的关系是否符合原文设定？
+
+## 输出格式
+{ "faithful": true, "score": 95, "issues": [...], "summary": "..." }
+
+## 原文参考(采样)
+{sourceText}
+
+## 待审核剧本 YAML
+{yaml}`;
+```
+
+### 4.7 YamlValidationChain — YAML 校验
 
 ```ts
 // prompts/yaml-validation.prompt.ts
@@ -398,37 +456,34 @@ export const POLISH_PROMPT = `你是一位剧本润色专家。请按照指定�
 ```
 NovelAnalysisChain  ─┐
                       ├──► CharacterExtractionChain
-                      │      (summary + genre)
+                      │      (smartSummary + analysisJSON)
                       │
                       ├──► PlotAnalysisChain
-                      │      (summary + characters)
+                      │      (smartSummary + characters)
                       │
                       ├──► ScenePlanningChain
-                      │      (plotAnalysis + characters)
+                      │      (plotAnalysis + characters + sourceText)
                       │
                       ├──► ScriptGenerationChain
-                      │      (scenes + characters + schemaRef)
+                      │      (scenes + characters + sourceText)
                       │
-                      └──► YamlValidationChain
-                             (yaml + schemaRules)
+                      ├──► YamlValidationChain
+                      │      (yaml + schemaRules)
+                      │
+                      └──► FaithfulnessCheck  ← 新增
+                             (yaml + sourceText)
 ```
 
 ### 上下文压缩策略
 
 ```ts
-// 防止上下文无限增长
+// 🔧 2026-06-06 修复: 智能摘要替代硬截断
+// 旧: fullText.slice(0, 6000) — 仅前6000字，5万字小说丢失88%
+// 新: buildSmartSummary(fullText, 20000) — 均匀采样20000字覆盖全文
 
-function compressContext(
-  previousResults: AgentResult[],
-  targetTokens: number,
-): string {
-  // 对前序 Agent 的输出做摘要压缩
-  // 例如: 30章小说 → 提取关键人物+情节 → 控制 < 4000 tokens
-  let context = "";
-  for (const result of previousResults) {
-    context += `[${result.agentName}]: ${summarize(result.output)}\n`;
-  }
-  return truncateToTokens(context, targetTokens);
+function buildSmartSummary(fullText: string, maxChars: number = 20000): string {
+  // 开头30% + 中间4段均匀采样 + 结尾30%
+  // 确保 Steps 2~5 能看到全文代表性片段
 }
 ```
 
@@ -451,38 +506,43 @@ function compressContext(
 ```ts
 // config/deepseek.ts
 
-import { ChatDeepSeek } from "@langchain/deepseek";
-
-export const deepseekModel = new ChatDeepSeek({
-  model: "deepseek-chat", // DeepSeek v2
-  temperature: 0.7, // 创意性: 0.7 (生成任务)
-  maxTokens: 4096, // 单次输出上限
-  apiKey: process.env.DEEPSEEK_API_KEY,
-  configuration: {
-    baseURL: process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com",
-  },
-});
-
-// 分析类任务用低温度
+/** 分析类任务 — 低温，准确性优先 */
 export const analysisModel = new ChatDeepSeek({
   model: "deepseek-chat",
-  temperature: 0.3, // 提取/分析任务: 0.3 (准确性优先)
+  temperature: 0.3,
   maxTokens: 2048,
-  apiKey: process.env.DEEPSEEK_API_KEY,
+});
+
+/** 创作类任务 — 中低温，平衡创意与忠实度 */
+export const creativeModel = new ChatDeepSeek({
+  model: "deepseek-chat",
+  temperature: 0.4, // 🔧 2026-06-06: 0.7→0.4，防止凭空编造
+  maxTokens: 4096,
+});
+
+/** 生成类任务 — 中温，有限创意但忠于原文 */
+export const generationModel = new ChatDeepSeek({
+  model: "deepseek-chat",
+  temperature: 0.5, // 🔧 2026-06-06: 0.8→0.5，防止编造对白
+  maxTokens: 8192,
 });
 ```
 
 ### 按任务分策略
 
-| Chain                    | Model           | Temperature | Max Output | 原因           |
-| ------------------------ | --------------- | ----------- | ---------- | -------------- |
-| NovelAnalysisChain       | `analysisModel` | 0.3         | 2048       | 分析需准确性   |
-| CharacterExtractionChain | `analysisModel` | 0.3         | 4096       | 提取需准确性   |
-| PlotAnalysisChain        | `analysisModel` | 0.3         | 4096       | 分析需准确性   |
-| ScenePlanningChain       | `deepseekModel` | 0.7         | 4096       | 规划需创意性   |
-| ScriptGenerationChain    | `deepseekModel` | 0.8         | 8192       | 创作需高创意性 |
-| YamlValidationChain      | `analysisModel` | 0.1         | 1024       | 校验需严格性   |
-| ScriptPolishChain        | `deepseekModel` | 0.7         | 4096       | 润色需风格适配 |
+| Chain                    | Model             | Temperature | Max Output | 原因                |
+| ------------------------ | ----------------- | ----------- | ---------- | ------------------- |
+| NovelAnalysisChain       | `analysisModel`   | 0.3         | 2048       | 分析需准确性        |
+| CharacterExtractionChain | `analysisModel`   | 0.3         | 4096       | 提取需准确性        |
+| PlotAnalysisChain        | `analysisModel`   | 0.3         | 4096       | 分析需准确性        |
+| ScenePlanningChain       | `creativeModel`   | 0.4         | 4096       | 规划需有限创意      |
+| ScriptGenerationChain    | `generationModel` | 0.5         | 8192       | 生成需忠于原文      |
+| YamlValidationChain      | `analysisModel`   | 0.1         | 1024       | 校验需严格性        |
+| **FaithfulnessCheck**    | `analysisModel`   | 0.1         | 1024       | 🔧 新增：忠实度审计 |
+| ScriptPolishChain        | `creativeModel`   | 0.4         | 4096       | 润色需风格适配      |
+
+> 🔧 2026-06-06 变更: ScenePlanning 0.7→0.4, ScriptGeneration 0.8→0.5。
+> 旧高温设置导致 AI 在缺乏原文上下文时大量编造情节和对白。
 
 ---
 

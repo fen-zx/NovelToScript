@@ -643,7 +643,7 @@ TaskDetailPage
 
 | 属性         | 内容                                                |
 | ------------ | --------------------------------------------------- |
-| **职责**     | 7 Agent 流水线可视化（SSE 驱动）                    |
+| **职责**     | 8 Agent 流水线可视化（SSE 驱动）                    |
 | **文件路径** | `src/views/TaskDetail/components/AgentPipeline.vue` |
 | **复用性**   | 中                                                  |
 

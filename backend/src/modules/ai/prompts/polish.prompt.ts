@@ -1,6 +1,9 @@
 // Prompt 模板 — Script Polish
 export const POLISH_PROMPT = `你是一位专业剧本润色专家。请按指定风格优化以下剧本的对白和动作描写。
 
+## ⚠️ 重要约束
+润色仅限于措辞优化和表达方式调整，不得改变角色名、情节走向、对白核心意思。不得凭空添加原文没有的内容。
+
 ## 润色风格: {style}
 风格参考: faithful=忠实原著保留原意, tv_drama=影视剧口语化增强画面感, short_drama=短剧快节奏精简对白, anime=动漫热血中二夸张, movie=电影凝练富有张力, tv_series=电视剧娓娓道来, stage=舞台剧戏剧化
 

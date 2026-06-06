@@ -41,7 +41,7 @@
 
 ### Task
 
-**职责**: AI 分析任务，跟踪 7 Agent 流水线状态
+**职责**: AI 分析任务，跟踪 8 Agent 流水线状态
 
 | 字段            | 类型          | 必填 | 说明               |
 | --------------- | ------------- | ---- | ------------------ |
@@ -189,7 +189,7 @@ User ──────── 1:N ──────── Task
 | Novel → Task       | 1:1  | 一部小说对应一个分析任务   |
 | Script → Version   | 1:N  | 一个剧本有多个版本快照     |
 | Script → Character | 1:N  | 一个剧本有多个角色         |
-| Task → AgentResult | 1:N  | 一个任务有 7 个 Agent 结果 |
+| Task → AgentResult | 1:N  | 一个任务有 8 个 Agent 结果 |
 | Version → Scene    | 1:N  | 一个版本有多个场景         |
 | Scene → Dialogue   | 1:N  | 一个场景有多段对白         |
 

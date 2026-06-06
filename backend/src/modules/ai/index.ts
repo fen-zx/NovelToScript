@@ -1,6 +1,6 @@
 // AI 模块 barrel export
 export { AIService, AgentPipeline } from "./ai.service"
-export { chunkNovel, estimateTokens, type TextChunk } from "./text-chunker"
+export { chunkNovel, buildSmartSummary, retrieveSourcePassages, estimateTokens, type TextChunk } from "./text-chunker"
 export { OutputParser, OutputParseError } from "./output-parser"
 
 // Chains

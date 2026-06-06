@@ -2,7 +2,38 @@
 
 ## 2026-06-06
 
-### 🐳 Docker 化完善
+### 🔧 训练数据记忆泄露修复 — AI 认出知名作品后自动填充作者/书名
+
+- **问题**: 输入《斗破苍穹》文本，AI 输出了"作者: 我吃西红柿"、"标题: 吞噬星空·校园篇"等训练数据中的信息
+- **根因**: DeepSeek 训练时见过《吞噬星空》，认出文本后从记忆里调取作者/书名，模型认为这是"已知事实"不算编造
+- **修复内容**:
+  - 全部 5 个 Prompt 新增 **反泄露约束**: "禁止使用你对知名作品的先验知识，即使认出文本来源也只分析提供的片段"
+  - `script-generation`: title 必须从原文提炼，author 原文未提填"未知"
+  - `character-extraction`: 只提取本次片段实际出现的角色
+  - `plot-analysis`: 不用训练数据中的后续情节填补
+- **影响**: novel-analysis.prompt.ts, character-extraction.prompt.ts, plot-analysis.prompt.ts, scene-planning.prompt.ts, script-generation.prompt.ts
+- **级别**: major
+
+### 🔧 任务失败修复 — AgentResult 缺失 FaithfulnessCheck
+
+- **问题**: AI 分析小说后输出的剧本包含原文中不存在的角色、对白、情节（非联网搜索，而是上下文截断 + 高温幻觉）
+- **根因**: ① Step 2~5 仅取前 6000 字(丢失 88%+ 内容) ② 温度 0.7~0.8 鼓励编造 ③ Prompt 缺少忠实约束 ④ 无忠实度校验
+- **修复内容**:
+  - **上下文截断**: `fullText.slice(0,6000)` → `buildSmartSummary(fullText, 20000)` 智能均匀采样
+  - **温度降低**: ScenePlanning 0.7→0.4, ScriptGeneration 0.8→0.5
+  - **忠实约束**: 全部 6 个 Prompt 添加 "严格仅基于文本，不得编造推测" 约束
+  - **原文注入**: Steps 4~5 新增 `{sourceText}` 参数注入原文采样
+  - **忠实度校验**: 新增 Step 6.5 `FaithfulnessCheck` — 比对剧本与原文，自动检测编造内容
+- **影响**: ai.service.ts, deepseek.ts, text-chunker.ts, 7 个 prompt 文件, generate-script.worker.ts
+- **级别**: major
+
+### 📝 文档更新
+
+- **AI_WORKFLOW.md**: 新增智能摘要策略、忠实约束规范、FaithfulnessCheck 步骤；更新温度表、任务拆解表、上下文链
+- **CHANGELOG**: 本条目
+- **ARCHITECTURE.md**: Agent 流水线步骤从 7 步更新为 8 步
+
+### �🐳 Docker 化完善
 
 - **修复**: Docker 构建与运行时多项问题
 - **内容**:

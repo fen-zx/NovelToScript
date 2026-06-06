@@ -1,6 +1,10 @@
 // Prompt 模板 — Scene Planning
 export const SCENE_PLANNING_PROMPT = `你是一位影视场景规划师。请将小说情节拆解为剧本场景。
 
+## ⚠️ 重要约束
+1. 严格仅基于下面提供的情节分析和原文片段来规划场景。不得凭空添加不存在的场景、地点或人物。每个场景必须能在情节分析或原文中找到依据
+2. **禁止使用你对知名作品的先验知识**：不要添加训练数据中你知道但本次未提供的场景或情节
+
 ## 任务
 按时间/空间划分场景，标注地点、时间、参与者、目标。
 
@@ -11,4 +15,7 @@ export const SCENE_PLANNING_PROMPT = `你是一位影视场景规划师。请将
 {plotAnalysis}
 
 ## 人物
-{characters}`
+{characters}
+
+## 原文参考(采样)
+{sourceText}`

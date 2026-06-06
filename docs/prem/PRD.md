@@ -321,7 +321,7 @@ graph TD
 #### 模块: Agent 流水线进度
 
 - 功能:
-  - SSE 实时展示 7 个 Agent 的执行进度
+  - SSE 实时展示 8 个 Agent 的执行进度
   - 已完成/进行中/等待中/失败 状态可视化
 - 数据字段:
   - Agent 名称
@@ -483,7 +483,7 @@ sequenceDiagram
     作者->>前端: 进入任务详情页
     前端->>后端: GET /api/tasks/:id/stream (SSE)
 
-    loop 7 个 Agent 流水线
+    loop 8 个 Agent 流水线
         队列->>AI: 调度下一个 Agent
         AI->>DB: 存储阶段结果
         后端-->>前端: SSE: agent progress

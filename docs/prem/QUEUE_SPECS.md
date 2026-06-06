@@ -9,7 +9,7 @@
 
 | 队列名              | 用途                   | 触发时机                   | 并发 | 超时 |
 | ------------------- | ---------------------- | -------------------------- | ---- | ---- |
-| `script-generation` | 7 Agent 流水线生成剧本 | TaskService.createTask     | 1    | 600s |
+| `script-generation` | 8 Agent 流水线生成剧本 | TaskService.createTask     | 1    | 600s |
 | `script-polish`     | AI 润色剧本            | PolishService.polishScript | 1    | 120s |
 | `export-pdf`        | Puppeteer PDF 渲染导出 | ExportService.exportScript | 2    | 60s  |
 | `cleanup`           | 30天过期文件清理       | Cron: 每天 03:00           | 1    | 300s |
@@ -23,7 +23,7 @@
 **职责**: 执行完整的 AI 剧本生成流水线
 
 ```
-创建 Task → 入队 → Worker 执行 7 Agent 步骤
+创建 Task → 入队 → Worker 执行 8 Agent 步骤
      │
      └── SSE 实时推送每步进度到前端
 ```
@@ -129,7 +129,7 @@ const worker = new Worker(
       startedAt: new Date(),
     });
 
-    // 2. 执行 7 Agent 流水线
+    // 2. 执行 8 Agent 流水线
     const pipeline = new AgentPipeline(taskId, novelId);
     pipeline.on("agent-start", (agent) => {
       // SSE 推送 + 更新 currentAgent
@@ -547,7 +547,7 @@ await agentResultRepo.update(taskId, agentName, {
 | 发现                            | 等级      | 建议                                      |
 | ------------------------------- | --------- | ----------------------------------------- |
 | script-generation 单次最长 600s | 🟡 Medium | 单并发 + SSE 进度推送, 用户体验可接受     |
-| 7 Agent 串行执行可能累计超时    | 🟡 Medium | 当前总耗时 ~245s, 600s 超时足够           |
+| 8 Agent 串行执行可能累计超时    | 🟡 Medium | 当前总耗时 ~255s, 600s 超时足够           |
 | 文本分片后每个分片调一次 LLM    | 🟡 Medium | 合并分片结果时内存占用可控 (每片 8000 字) |
 | export-pdf 2并发可能内存压力大  | 🟢 Low    | Puppeteer 单实例 ~200MB, 2并发 = 400MB    |
 
