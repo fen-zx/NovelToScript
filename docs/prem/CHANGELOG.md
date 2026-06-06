@@ -2,6 +2,37 @@
 
 ## 2026-06-06
 
+### 🎨 前端全站响应式布局改造 — px 固定尺寸 → vh/vw/clamp 弹性单位
+
+- **问题**: 桌面大面积空白（max-width 限制）、侧边栏 180px 不缩放、字号固定偏小、手机屏侧边栏占 48%
+- **修复内容**:
+  - **布局骨架**: `AppLayout.vue` 引入 CSS 变量 `--sidebar-w`/`--header-h` + `clamp()` 全局驱动
+  - **侧边栏**: `180px` → `clamp(60px, 15vw, 280px)` 全尺寸自适应
+  - **顶栏**: `50px` → `clamp(56px, 10vh, 96px)` + 图标左移 5vw
+  - **主内容**: 5 个 views 移除 `max-width` 限制 → `width: 100%` 填满
+  - **字号**: 全站 `clamp(14px, 1vw, 22px)` 弹性缩放
+  - **登录页**: 卡片 `90vw` 响应式 + 401 不跳转显示真实错误
+  - **编辑器**: `calc` → `clamp()` 同步布局变量
+- **影响**: AppLayout.vue, 5 views, AuthPage.vue, ScriptEditorPage.vue, request.ts
+- **级别**: major
+
+### 🔧 密码重置双验证 — username + account 双重校验
+
+- **问题**: 密码重置仅校验 username，且 Zod 校验拒绝空 newPassword 导致验证步骤失败
+- **修复内容**:
+  - `ResetPasswordDto` 新增 `account` 字段，`newPassword` 改为可选
+  - `auth.service.ts` 新增 `verifyUsernameAndAccount()` 同时校验两字段
+  - 前端 `AuthPage.vue` Step1 新增账号输入框
+- **影响**: request.dto.ts, auth.controller.ts, auth.service.ts, auth.ts, AuthPage.vue
+- **级别**: minor
+
+### 🔧 登录 401 误触发页面刷新
+
+- **问题**: 登录失败返回 401 → Axios 拦截器无条件跳转 `/auth` → 页面白屏刷新
+- **修复**: `request.ts` 拦截器增加 `isLoginRequest` 判断，登录 401 不跳转
+- **影响**: request.ts
+- **级别**: minor
+
 ### 🔧 训练数据记忆泄露修复 — AI 认出知名作品后自动填充作者/书名
 
 - **问题**: 输入《斗破苍穹》文本，AI 输出了"作者: 我吃西红柿"、"标题: 吞噬星空·校园篇"等训练数据中的信息

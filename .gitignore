@@ -20,3 +20,6 @@ backend/dist/
 # OS
 Thumbs.db
 .DS_Store
+
+# doc
+docs/.temp/bug_founded
