@@ -2,6 +2,17 @@
 
 ## 2026-06-06
 
+### 🎨 暗色模式全站适配 + 用户退出按钮 + 通知面板优化
+
+- **问题**: 暗色模式下主内容区及 Element Plus 组件白底不变、无退出登录入口、通知面板右对齐
+- **修复内容**:
+  - **暗色模式**: `main.ts` 导入 `element-plus/theme-chalk/dark/css-vars.css` 官方暗色变量
+  - **暗色模式**: `AppLayout.vue` `.app-layout`/`.main` 增加暗色 background/color + 0.3s 过渡
+  - **用户退出**: 👤 悬浮弹出居中"退出登录"按钮，调用 `auth.logout()` 清除 token
+  - **通知面板**: 🔔 悬浮+点击均弹出，`left:50% + translateX(-50%)` 居中对齐
+- **影响**: main.ts, AppLayout.vue, NotificationCenter.vue
+- **级别**: minor
+
 ### 🎨 前端全站响应式布局改造 — px 固定尺寸 → vh/vw/clamp 弹性单位
 
 - **问题**: 桌面大面积空白（max-width 限制）、侧边栏 180px 不缩放、字号固定偏小、手机屏侧边栏占 48%
