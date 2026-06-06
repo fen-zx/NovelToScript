@@ -10,11 +10,8 @@ export interface SSEHandlers {
 
 export function connectTaskSSE(taskId: string, handlers: SSEHandlers): () => void {
   const token = localStorage.getItem('token')
-  const es = new EventSource(`/api/tasks/${taskId}/stream`)
-
-  // Note: EventSource doesn't natively support headers.
-  // Token is typically passed via cookie or query param in production.
-  // Here we use a workaround or rely on the backend reading cookie.
+  // EventSource 不支持自定义 Header，通过 query 参数传递 token
+  const es = new EventSource(`/api/tasks/${taskId}/stream?token=${token}`)
 
   es.addEventListener('agent:start', (e: MessageEvent) => handlers.onAgentStart?.(JSON.parse(e.data)))
   es.addEventListener('agent:progress', (e: MessageEvent) => handlers.onAgentProgress?.(JSON.parse(e.data)))

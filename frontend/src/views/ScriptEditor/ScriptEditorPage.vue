@@ -26,6 +26,7 @@ const exportFormat = ref("yaml");
 // Polish
 const polishVisible = ref(false);
 const polishStyle = ref("faithful");
+const polishing = ref(false);
 
 // Version history
 const versionsVisible = ref(false);
@@ -97,8 +98,36 @@ async function handlePolish() {
     await scriptApi.polish(id, {
       style: polishStyle.value as import("@/types/api").PolishStyle,
     });
-    ElMessage.success("润色任务已入队");
+    ElMessage.success("润色任务已入队，等待中...");
     polishVisible.value = false;
+    polishing.value = true;
+
+    // 轮询等待新版本生成
+    const targetVersion = currentVersion.value + 1;
+    const poll = setInterval(async () => {
+      try {
+        const res = await scriptApi.getById(id);
+        if (res.data.currentVersion >= targetVersion) {
+          clearInterval(poll);
+          content.value = res.data.content;
+          currentVersion.value = res.data.currentVersion;
+          polishing.value = false;
+          ElMessage.success("润色完成！");
+          await loadVersions();
+        }
+      } catch {
+        /* retry */
+      }
+    }, 3000);
+
+    // 超时 5 分钟
+    setTimeout(() => {
+      clearInterval(poll);
+      if (polishing.value) {
+        polishing.value = false;
+        ElMessage.warning("润色超时，请刷新查看");
+      }
+    }, 300000);
   } catch {
     ElMessage.error("润色失败");
   }

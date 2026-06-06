@@ -52,7 +52,11 @@ export class TaskService {
   async getTaskById(taskId: string) {
     const task = await this.taskRepo.findByIdWithResults(taskId)
     if (!task) throw Errors.taskNotFound()
-    return task
+    return {
+      ...task,
+      scriptId: task.novel?.scripts?.[0]?.id ?? null,
+      novelTitle: task.novel?.title ?? "未知",
+    }
   }
 
   async retryTask(taskId: string, mode: "resume" | "restart") {

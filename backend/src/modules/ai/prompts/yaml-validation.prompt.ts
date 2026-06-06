@@ -5,8 +5,8 @@ export const YAML_VALIDATION_PROMPT = `你是 YAML 格式校验专家。请检�
 {schemaRules}
 
 ## 输出格式
-{"valid":true,"errors":[],"warnings":[],"suggestions":[]}
-若发现错误: {"valid":false,"errors":[{"line":行号,"field":"字段路径","message":"描述","severity":"error|warning"}]}
+{{"valid":true,"errors":[],"warnings":[],"suggestions":[]}}
+若发现错误: {{"valid":false,"errors":[{{"line":行号,"field":"字段路径","message":"描述","severity":"error|warning"}}]}}
 
 ## 待校验 YAML
 {yaml}`

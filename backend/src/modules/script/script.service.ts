@@ -2,7 +2,6 @@ import { ScriptRepository } from "./script.repository"
 import { VersionRepository } from "./version.repository"
 import { CharacterRepository } from "./character.repository"
 import { Errors } from "@/shared/errors/error-codes"
-import { prisma } from "@/shared/database/prisma"
 
 export class ScriptService {
   constructor(
@@ -37,10 +36,8 @@ export class ScriptService {
 
     const nextVersion = await this.versionRepo.getNextVersionNumber(scriptId)
 
-    await prisma.$transaction([
-      this.versionRepo.create({ scriptId, versionNumber: nextVersion, content, note }),
-      this.scriptRepo.update(scriptId, { currentVersion: nextVersion }),
-    ])
+    await this.versionRepo.create({ scriptId, versionNumber: nextVersion, content, note })
+    await this.scriptRepo.update(scriptId, { currentVersion: nextVersion })
 
     return { id: scriptId, currentVersion: nextVersion, updatedAt: new Date().toISOString() }
   }
@@ -51,13 +48,11 @@ export class ScriptService {
 
     const nextVersion = await this.versionRepo.getNextVersionNumber(scriptId)
 
-    await prisma.$transaction([
-      this.versionRepo.create({
-        scriptId, versionNumber: nextVersion,
-        content: version.content, note: `回滚到 v${targetVersion}`,
-      }),
-      this.scriptRepo.update(scriptId, { currentVersion: nextVersion }),
-    ])
+    await this.versionRepo.create({
+      scriptId, versionNumber: nextVersion,
+      content: version.content, note: `回滚到 v${targetVersion}`,
+    })
+    await this.scriptRepo.update(scriptId, { currentVersion: nextVersion })
 
     return { id: scriptId, currentVersion: nextVersion }
   }
