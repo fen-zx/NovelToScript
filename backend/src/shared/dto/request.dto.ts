@@ -23,10 +23,11 @@ export const LoginDto = z.object({
 })
 export type LoginDto = z.infer<typeof LoginDto>
 
-/** A0c 密码重置 */
+/** A0c 密码重置（newPassword为空时仅验证用户名+账号，二者均匹配才通过） */
 export const ResetPasswordDto = z.object({
   username: z.string(),
-  newPassword: z.string().min(6).max(100),
+  account: z.string(),
+  newPassword: z.string().optional(),
 })
 export type ResetPasswordDto = z.infer<typeof ResetPasswordDto>
 

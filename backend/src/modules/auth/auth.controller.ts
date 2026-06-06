@@ -23,9 +23,20 @@ export class AuthController {
 
   async resetPassword(req: Request, res: Response, next: NextFunction) {
     try {
-      const { username, newPassword } = req.body
-      await authService.resetPassword(username, newPassword)
-      res.json({ code: 0, message: "密码重置成功", data: null })
+      const { username, account, newPassword } = req.body
+      if (!newPassword) {
+        // Step 1: 验证用户名+账号是否匹配
+        await authService.verifyUsernameAndAccount(username, account)
+        res.json({ code: 0, message: "身份验证通过", data: null })
+      } else {
+        // Step 2: 执行密码重置
+        if (newPassword.length < 6) {
+          res.status(400).json({ code: 400, message: "密码至少6位", data: null })
+          return
+        }
+        await authService.resetPassword(username, account, newPassword)
+        res.json({ code: 0, message: "密码重置成功", data: null })
+      }
     } catch (err) { next(err) }
   }
 
