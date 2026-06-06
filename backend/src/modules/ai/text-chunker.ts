@@ -77,3 +77,97 @@ export function estimateTokens(text: string): number {
   const otherChars = text.length - chineseChars
   return Math.ceil(chineseChars * 2 + otherChars * 0.5)
 }
+
+/**
+ * 构建智能摘要：从全文均匀采样关键段落，而非仅截取开头
+ * 策略：开头(30%) + 中间(40%，均匀采样) + 结尾(30%)
+ */
+export function buildSmartSummary(fullText: string, maxChars: number = 20000): string {
+  if (fullText.length <= maxChars) return fullText
+
+  const headLen = Math.floor(maxChars * 0.30)
+  const tailLen = Math.floor(maxChars * 0.30)
+  const midLen = maxChars - headLen - tailLen
+
+  const head = fullText.slice(0, headLen)
+  const tail = fullText.slice(fullText.length - tailLen)
+
+  // 中间段：均匀采样 N 个片段
+  const midStart = headLen
+  const midEnd = fullText.length - tailLen
+  const midRange = midEnd - midStart
+
+  if (midRange <= midLen) {
+    // 中间段本身就不长，直接取
+    const mid = fullText.slice(midStart, midEnd)
+    return head + "\n\n...（中间段落摘要）...\n\n" + mid + "\n\n...\n\n" + tail
+  }
+
+  // 均匀采样 4 个中间片段
+  const sampleCount = 4
+  const sampleSize = Math.floor(midLen / sampleCount)
+  const step = Math.floor(midRange / sampleCount)
+
+  const midSamples: string[] = []
+  for (let i = 0; i < sampleCount; i++) {
+    const start = midStart + i * step
+    const end = Math.min(start + sampleSize, midEnd)
+    midSamples.push(fullText.slice(start, end))
+  }
+
+  return head + "\n\n...（中间段落摘要）...\n\n" + midSamples.join("\n\n...\n\n") + "\n\n...\n\n" + tail
+}
+
+/**
+ * 根据场景引用的章节号，从原文中检索相关片段
+ * 用于 Steps 4-5 注入原文上下文，防止 AI 编造
+ */
+export function retrieveSourcePassages(
+  fullText: string,
+  chapters: { title: string; start: number; end: number }[],
+  sceneChapterRefs: string[],
+  maxChars: number = 12000,
+): string {
+  if (chapters.length === 0 || sceneChapterRefs.length === 0) {
+    // 无法按章节匹配时，退回智能摘要
+    return buildSmartSummary(fullText, maxChars)
+  }
+
+  // 从场景引用中提取章节号
+  const chapterNums = new Set<number>()
+  for (const ref of sceneChapterRefs) {
+    const match = ref.match(/第(\d+)[章节]/)
+    if (match) chapterNums.add(parseInt(match[1], 10))
+  }
+
+  if (chapterNums.size === 0) {
+    return buildSmartSummary(fullText, maxChars)
+  }
+
+  // 收集相关章节文本
+  const passages: string[] = []
+  let totalChars = 0
+
+  for (const num of chapterNums) {
+    const idx = num - 1
+    if (idx >= 0 && idx < chapters.length) {
+      const ch = chapters[idx]
+      const chText = fullText.slice(ch.start, ch.end)
+      // 每章最多取 3000 字
+      const snippet = chText.length > 3000
+        ? chText.slice(0, 1500) + "\n...\n" + chText.slice(chText.length - 1500)
+        : chText
+
+      if (totalChars + snippet.length <= maxChars) {
+        passages.push(`--- ${ch.title} ---\n${snippet}`)
+        totalChars += snippet.length
+      } else {
+        break
+      }
+    }
+  }
+
+  return passages.length > 0
+    ? passages.join("\n\n")
+    : buildSmartSummary(fullText, maxChars)
+}

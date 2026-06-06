@@ -7,19 +7,19 @@
 
 ## 一、Service 清单
 
-| Service              | 职责                                      | 对应模块 |
-| -------------------- | ----------------------------------------- | -------- |
-| **UserService**      | 用户注册、登录、密码重置、账号检查、配额  | Auth     |
-| **NovelService**     | 小说导入、章节识别、文本分片、文件存储    | Novel    |
-| **TaskService**      | 任务创建、列表、详情、状态流转、SSE、删除 | Task     |
-| **ScriptService**    | 剧本 CRUD、版本管理、回滚（聚合根）       | Script   |
-| **VersionService**   | 版本快照创建、查询、回滚                  | Script   |
-| **CharacterService** | 剧本角色管理                              | Script   |
-| **AIService**        | 7 Agent 流水线编排、LLM 调用、结果解析    | AI       |
-| **PolishService**    | 剧本润色（7 种风格）                      | Polish   |
-| **ExportService**    | 多格式导出（yaml/json/md/txt/pdf）        | Export   |
-| **SchemaService**    | YAML Schema 文档                          | Schema   |
-| **StorageService**   | MinIO 上传/下载/生命周期                  | Storage  |
+| Service              | 职责                                               | 对应模块 |
+| -------------------- | -------------------------------------------------- | -------- |
+| **UserService**      | 用户注册、登录、密码重置、账号检查、配额           | Auth     |
+| **NovelService**     | 小说导入、章节识别、文本分片、文件存储             | Novel    |
+| **TaskService**      | 任务创建、列表、详情、状态流转、SSE、删除          | Task     |
+| **ScriptService**    | 剧本 CRUD、版本管理、回滚（聚合根）                | Script   |
+| **VersionService**   | 版本快照创建、查询、回滚                           | Script   |
+| **CharacterService** | 剧本角色管理                                       | Script   |
+| **AIService**        | 8 Agent 流水线编排、LLM 调用、结果解析、忠实度校验 | AI       |
+| **PolishService**    | 剧本润色（7 种风格）                               | Polish   |
+| **ExportService**    | 多格式导出（yaml/json/md/txt/pdf）                 | Export   |
+| **SchemaService**    | YAML Schema 文档                                   | Schema   |
+| **StorageService**   | MinIO 上传/下载/生命周期                           | Storage  |
 
 ---
 
@@ -395,7 +395,7 @@ QUEUED ──→ PROCESSING ──→ COMPLETED
 
 ## 八、AIService
 
-**职责**: 7 Agent 流水线编排、LangChain 调用、结果解析
+**职责**: 8 Agent 流水线编排、LangChain 调用、结果解析、忠实度校验
 
 ### AI 流水线
 
@@ -606,7 +606,7 @@ chunkText(novelText)
 | 方法                                | 事务需求 | 原因                             |
 | ----------------------------------- | -------- | -------------------------------- |
 | `UserService.resetPassword`         | ✅       | 单表更新，显式事务保证一致       |
-| `TaskService.createTask`            | ✅       | Task + 7 AgentResult 原子创建    |
+| `TaskService.createTask`            | ✅       | Task + 8 AgentResult 原子创建    |
 | `TaskService.retryTask`             | ✅       | Task 状态 + AgentResult 批量重置 |
 | `TaskService.deleteTask`            | ✅       | AgentResult 级联删除             |
 | `ScriptService.updateScript`        | ✅       | Version.insert + Script.update   |

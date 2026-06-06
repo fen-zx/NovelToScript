@@ -7,7 +7,7 @@ import { scriptGenerationQueue, isScriptGenQueueFull } from "@/shared/queue/queu
 
 const AGENT_NAMES = [
   "NovelAnalysis", "CharacterExtraction", "PlotAnalysis",
-  "ScenePlanning", "ScriptGeneration", "YamlValidation", "ScriptPolish",
+  "ScenePlanning", "ScriptGeneration", "YamlValidation", "FaithfulnessCheck", "ScriptPolish",
 ]
 
 export class TaskService {

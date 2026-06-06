@@ -480,7 +480,7 @@ src/views/TaskDetail/
 | 状态         | 类型               | 说明                       |
 | ------------ | ------------------ | -------------------------- |
 | `task`       | `TaskDetail\|null` | 基础信息                   |
-| `agents`     | `AgentState[]`     | 7 个 Agent 状态 ← SSE 推入 |
+| `agents`     | `AgentState[]`     | 8 个 Agent 状态 ← SSE 推入 |
 | `taskStatus` | `TaskStatus`       | 派生自 agents              |
 | `scriptId`   | `string\|null`     | 完成后返回                 |
 

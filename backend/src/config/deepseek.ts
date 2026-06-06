@@ -13,10 +13,10 @@ export const analysisModel = new ChatDeepSeek({
   },
 })
 
-/** 创作类任务 — 中高温，创意性优先 */
+/** 创作类任务 — 中低温，平衡创意与忠实度 */
 export const creativeModel = new ChatDeepSeek({
   model: "deepseek-chat",
-  temperature: 0.7,
+  temperature: 0.4,
   maxTokens: 4096,
   apiKey: env.DEEPSEEK_API_KEY,
   configuration: {
@@ -24,10 +24,10 @@ export const creativeModel = new ChatDeepSeek({
   },
 })
 
-/** 生成类任务 — 高温，最大创意 */
+/** 生成类任务 — 中温，有限创意但忠于原文 */
 export const generationModel = new ChatDeepSeek({
   model: "deepseek-chat",
-  temperature: 0.8,
+  temperature: 0.5,
   maxTokens: 8192,
   apiKey: env.DEEPSEEK_API_KEY,
   configuration: {

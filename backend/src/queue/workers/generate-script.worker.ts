@@ -63,7 +63,7 @@ export const generateScriptWorker = new Worker(
         await agentResultRepo.update(taskId, agent, {
           status: "DONE", output: JSON.stringify(output), completedAt: new Date(),
         })
-        await taskRepo.update(taskId, { progress: (pipeline.currentStep / 7) })
+        await taskRepo.update(taskId, { progress: (pipeline.currentStep / 8) })
       })
 
       logger.info(`[Worker] Starting AI pipeline for task ${taskId}`)
@@ -101,6 +101,14 @@ export const generateScriptWorker = new Worker(
 
       await taskRepo.update(taskId, {
         status: "COMPLETED", progress: 1, completedAt: new Date(),
+        // 🔧 存储忠实度校验结果到 errorMessage(用作备注)字段，供前端展示
+        ...(result.faithfulness ? {
+          errorMessage: JSON.stringify({
+            faithful: result.faithfulness.faithful,
+            score: result.faithfulness.score,
+            issues: result.faithfulness.issues?.length || 0,
+          }),
+        } : {}),
       })
 
       return { scriptId: script.id }
