@@ -182,7 +182,7 @@ async function handleSubmit() {
 
 <style scoped>
 .import-page {
-  max-width: 600px;
+  width: 100%;
 }
 .mb16 {
   margin-bottom: 16px;

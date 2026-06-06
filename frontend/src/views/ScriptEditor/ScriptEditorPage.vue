@@ -345,7 +345,8 @@ function yamlToPreview(yaml: string): string {
 
 <style scoped>
 .editor-page {
-  height: calc(100vh - 90px);
+  height: calc(100vh - clamp(80px, 7vh, 100px));
+  width: 100%;
   display: flex;
   flex-direction: column;
 }

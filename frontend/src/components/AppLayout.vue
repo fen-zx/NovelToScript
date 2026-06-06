@@ -46,11 +46,13 @@ const navItems = [
 
 <style scoped>
 .app-layout {
+  --sidebar-w: clamp(60px, 15vw, 280px);
+  --header-h: clamp(56px, 10vh, 96px);
   display: flex;
   min-height: 100vh;
 }
 .sidebar {
-  width: 180px;
+  width: var(--sidebar-w);
   position: fixed;
   top: 0;
   left: 0;
@@ -68,11 +70,17 @@ const navItems = [
   border-color: rgba(255, 255, 255, 0.08);
 }
 .logo {
-  padding: 14px 16px;
-  font-size: 16px;
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  padding: 0 clamp(16px, 1.5vw, 20px);
+  font-size: clamp(18px, 1.5vw, 22px);
   font-weight: 700;
   color: #6c5ce7;
   border-bottom: 1px solid rgba(255, 255, 255, 0.45);
+  box-sizing: border-box;
+  white-space: nowrap;
+  overflow: hidden;
 }
 .dark .logo {
   color: #a29bfe;
@@ -80,17 +88,17 @@ const navItems = [
 }
 nav {
   flex: 1;
-  padding: 8px 0;
+  padding: clamp(8px, 1vh, 12px) 0;
 }
 nav a {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  margin: 1px 8px;
+  gap: clamp(8px, 0.8vw, 12px);
+  padding: clamp(12px, 1.2vh, 14px) clamp(16px, 1.5vw, 20px);
+  margin: 2px clamp(8px, 0.5vw, 12px);
   color: #303133;
   text-decoration: none;
-  font-size: 13px;
+  font-size: clamp(14px, 1.1vw, 17px);
   border-radius: 8px;
   transition: 0.2s;
 }
@@ -116,9 +124,9 @@ nav a.active {
 .header {
   position: fixed;
   top: 0;
-  left: 180px;
+  left: var(--sidebar-w);
   right: 0;
-  height: 50px;
+  height: var(--header-h);
   z-index: 99;
   background: rgba(255, 255, 255, 0.45);
   backdrop-filter: blur(16px);
@@ -127,8 +135,9 @@ nav a.active {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  padding: 0 16px;
-  gap: 12px;
+  padding: 0 clamp(16px, 1.5vw, 24px);
+  padding-right: calc(clamp(16px, 1.5vw, 24px) + 5vw);
+  gap: clamp(12px, 1.2vw, 20px);
 }
 .dark .header {
   background: rgba(30, 30, 55, 0.6);
@@ -137,16 +146,19 @@ nav a.active {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: clamp(12px, 1.2vw, 20px);
 }
 .user-name {
-  font-size: 13px;
+  font-size: clamp(14px, 1vw, 16px);
 }
 .main {
-  margin-left: 180px;
-  margin-top: 50px;
-  padding: 20px;
+  margin-left: var(--sidebar-w);
+  margin-top: var(--header-h);
+  padding: clamp(16px, 2vh, 24px);
   flex: 1;
-  min-height: calc(100vh - 50px);
+  width: calc(100vw - var(--sidebar-w));
+  min-height: calc(100vh - var(--header-h));
+  font-size: clamp(15px, 1vw, 17px);
+  box-sizing: border-box;
 }
 </style>

@@ -269,8 +269,9 @@ async function handleReset() {
   );
 }
 .login-card {
-  width: 400px;
-  padding: 36px;
+  width: 90vw;
+  max-width: 420px;
+  padding: clamp(24px, 5vw, 36px);
   background: rgba(255, 255, 255, 0.55);
   backdrop-filter: blur(16px);
   border-radius: 20px;
