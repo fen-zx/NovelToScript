@@ -65,7 +65,7 @@ export const generateScriptWorker = new Worker(
         await agentResultRepo.update(taskId, agent, {
           status: "DONE", output: JSON.stringify(output), completedAt: new Date(),
         })
-        const progress = pipeline.currentStep / 8
+        const progress = pipeline.currentStep / 7
         await taskRepo.update(taskId, { progress })
         await publishTaskEvent({
           type: "agent:done", taskId, agent,
@@ -112,9 +112,9 @@ export const generateScriptWorker = new Worker(
         // 🔧 存储忠实度校验结果到 errorMessage(用作备注)字段，供前端展示
         ...(result.faithfulness ? {
           errorMessage: JSON.stringify({
-            faithful: result.faithfulness.faithful,
-            score: result.faithfulness.score,
-            issues: result.faithfulness.issues?.length || 0,
+            faithful: (result.faithfulness as any).faithful,
+            score: (result.faithfulness as any).score,
+            issues: (result.faithfulness as any).issues?.length || 0,
           }),
         } : {}),
       })
