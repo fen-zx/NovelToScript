@@ -14,6 +14,53 @@ import { logger } from "@/utils/logger"
 const scriptRepo = new ScriptRepository()
 const versionRepo = new VersionRepository()
 
+/** 归一化场景 YAML 的缩进，确保所有场景字段使用一致的 2-space 缩进 */
+function normalizeSceneIndent(sceneYaml: string): string {
+  const lines = sceneYaml.split("\n")
+  if (lines.length < 2) return sceneYaml
+
+  // 找到第一个缩进行（sceneNumber 之后的第一个子字段）的实际缩进量
+  let actualBaseIndent = 0
+  for (let i = 1; i < lines.length; i++) {
+    const m = lines[i].match(/^(\s+)\S/)
+    if (m) {
+      actualBaseIndent = m[1].length
+      break
+    }
+  }
+
+  const expectedBaseIndent = 2
+  if (actualBaseIndent === 0 || actualBaseIndent === expectedBaseIndent) return sceneYaml
+
+  const diff = actualBaseIndent - expectedBaseIndent
+
+  return lines
+    .map((line) => {
+      if (diff > 0) {
+        // AI 多加了缩进 → 减少 diff 个空格
+        const leading = line.match(/^(\s*)/)![0]
+        if (leading.length >= diff) return line.slice(diff)
+      } else {
+        // AI 少了缩进 → 补充 |diff| 个空格（非 sceneNumber 行）
+        if (/^-\s+sceneNumber:/.test(line)) return line
+        if (line.trim() === "") return line
+        const addSpaces = " ".repeat(-diff)
+        return addSpaces + line
+      }
+      return line
+    })
+    .join("\n")
+}
+
+/** 归一化完整 YAML 中所有场景的缩进 */
+function normalizeYamlIndent(yaml: string): string {
+  const sceneChunks = splitYamlByScenes(yaml)
+  if (sceneChunks.length === 0) return yaml
+  const header = extractYamlHeader(yaml)
+  const normalizedScenes = sceneChunks.map(normalizeSceneIndent)
+  return `${header}\n${normalizedScenes.join("\n")}`
+}
+
 /** 按 scene 拆分 YAML 文本，返回每个 scene 的原始文本块 */
 function splitYamlByScenes(yaml: string): string[] {
   const scenes: string[] = []
@@ -94,7 +141,7 @@ export const polishScriptWorker = new Worker(
         const sceneOnly = cleaned
           .replace(/^[\s\S]*?(?=^\s{0,2}-\s+sceneNumber:)/m, "") // 去掉头部
           .trim()
-        polishedScenes.push(sceneOnly)
+        polishedScenes.push(normalizeSceneIndent(sceneOnly))
 
         logger.info(`[PolishWorker] Scene ${i + 1} done: ${raw.length} → ${cleaned.length} chars`)
       }
@@ -106,7 +153,7 @@ export const polishScriptWorker = new Worker(
       const prompt = PromptTemplate.fromTemplate(POLISH_PROMPT)
       const chain = RunnableSequence.from([prompt, polishModel, new StringOutputParser()])
       const raw = await chain.invoke({ style, yaml: yamlContent })
-      polishedYaml = OutputParser.extractYaml(raw)
+      polishedYaml = normalizeYamlIndent(OutputParser.extractYaml(raw))
       logger.info(`[PolishWorker] Direct polish: ${raw.length} → ${polishedYaml.length} chars`)
     }
 

@@ -24,7 +24,7 @@ _暂无_
 - [x] **T-069** PDF 导出 Puppeteer 渲染（`pdf-renderer.ts` + Worker）
 - [x] **T-070** 定时清理 Worker 验证（CRON 03:00 + MinIO 生命周期）
 - [x] **T-071** 性能优化（Task list Redis 缓存 TTL 10s）
-- [x] 运维文档（`docs/core/DEPLOYMENT.md` 10章节）+ README 路径修正
+- [x] **T-072** 文档一致性更新（Prisma版本/Agent数量/LangChain版本/PAGE_SPECS状态同步）
 
 ### 文档设计
 
@@ -35,7 +35,7 @@ _暂无_
 - [x] 后端架构 + Service/Repository 层设计
 - [x] 数据库设计（9 表）+ Prisma Schema（2 次迁移）
 - [x] 队列架构（4 队列 + 4 Worker）
-- [x] AI 工作流（8 Agent + 三温策略 + 忠实度校验）
+- [x] AI 工作流（7 Agent + 三温策略 + 忠实度校验）
 - [x] 前端架构 + 组件方案（43 组件）+ 实现蓝图
 
 ### 脚手架
@@ -65,7 +65,7 @@ _暂无_
 - [x] **T-015** A2 POST /api/tasks
 - [x] **T-016** A3 GET /api/tasks
 - [x] **T-017** A4 GET /api/tasks/:id
-- [x] **T-018** A5 SSE /api/tasks/:id/stream（后端占位，待 Redis Pub/Sub 接入）
+- [x] **T-018** A5 SSE /api/tasks/:id/stream（Redis Pub/Sub 已接入）
 - [x] **T-019** A10 POST /api/tasks/:id/retry
 - [x] **T-020** A6 GET /api/scripts/:id
 - [x] **T-021** A7 PUT /api/scripts/:id

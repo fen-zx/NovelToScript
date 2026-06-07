@@ -27,8 +27,8 @@
 | Service 层设计    | `docs/core/SERVICE_SPECS.md`         | ✅ 完成（11 Service + 8 事务点）           |
 | Repository 层设计 | `docs/core/REPOSITORY_SPECS.md`      | ✅ 完成（9 Repository + 分页规范）         |
 | 队列架构          | `docs/core/QUEUE_SPECS.md`           | ✅ 完成（4 队列 + 4 Worker）               |
-| AI 工作流         | `docs/core/AI_WORKFLOW.md`           | ✅ 完成（8 Agent + 三温策略 + 忠实度校验） |
-| 数据库设计        | `docs/core/DATABASE_SCHEMA.md`       | ✅ 完成（9 表 + 10 索引）                  |
+| AI 工作流         | `docs/core/AI_WORKFLOW.md`           | ✅ 完成（7 Agent + 三温策略 + 忠实度校验） |
+| 数据库设计        | `docs/core/DATABASE_SCHEMA.md`       | ✅ 完成（9 表 + 10 索引 + Prisma 7.x）     |
 | Prisma Schema     | `backend/prisma/schema.prisma`       | ✅ 完成（9 表 + 4 枚举 + 迁移）            |
 | 组件方案          | `docs/temp/COMPONENT_SPECS.md`       | ✅ 完成（43 组件）                         |
 | 实现蓝图          | `docs/temp/PAGE_IMPLEMENTATION.md`   | ✅ 完成（7页路由+数据流）                  |
@@ -53,10 +53,10 @@
 | P2 小说导入页    | 🟡 容器已生成 | 70%    | A1 ✅ 后端已实现                |
 | P3 分析任务页    | 🟡 容器已生成 | 70%    | A2/A3/A10/A15 ✅ 后端已实现     |
 | P4 任务详情页    | 🟡 容器已生成 | 65%    | A4/A5 ✅ 后端已实现（SSE 占位） |
-| P5 剧本编辑页    | 🟡 容器已生成 | 65%    | A6~A8/A11~A14 ✅ 后端已实现     |
+| P5 剧本编辑页    | 🟡 容器已生成 | 70%    | A6~A8/A11~A14 ✅ 后端已实现     |
 | P6 Schema 文档页 | 🟡 容器已生成 | 70%    | A9 ✅ 后端已实现                |
 
-> 剩余工作: 前后端联调、SSE Redis Pub/Sub 接入、Monaco Editor 集成、子组件拆分
+> 剩余工作: 前后端联调完善、SSE Redis Pub/Sub 验证、Monaco Editor 集成调优、子组件拆分、端到端测试
 
 ---
 

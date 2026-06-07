@@ -1,7 +1,7 @@
 # Backend Architecture — AI小说转剧本工具
 
 > 基于 RequirementAnalyzer + DesignGenerator + PAGE_SPECS + API_SPECS 输出
-> 日期: 2026-06-05 | 技术栈: Express + Prisma + LangChain + BullMQ
+> 日期: 2026-06-07 | 技术栈: Express + Prisma 7.x + LangChain 1.x + BullMQ
 > 前端代码已生成: 7 页面 + 7 全局组件 + 7 API 模块 + 3 Store + 2 Hooks
 
 ---
@@ -12,16 +12,16 @@
 
 **系统职责**:
 
-| 职责域      | 说明                                                                              |
-| ----------- | --------------------------------------------------------------------------------- |
-| 用户管理    | 注册、登录、密码重置、JWT 鉴权                                                    |
-| 小说管理    | 导入（txt/docx/md ≤20MB）、章节识别（五级兜底）、文本分片存储                     |
-| AI 剧本生成 | 8 Agent 流水线：分析→角色提取→情节提取→场景规划→剧本生成→YAML校验→忠实度校验→润色 |
-| 剧本编辑    | CRUD、版本历史、Schema 校验、回滚                                                 |
-| 导出服务    | yaml/json/md/txt 直接下载，PDF 双方案（Puppeteer 正式 / 前端 jsPDF 快速）         |
-| 文件管理    | MinIO 存储，生命周期管理（原文+中间 30d，最终剧本永久）                           |
-| 任务调度    | BullMQ 队列，运行 1 / 排队 3，支持断点重试                                        |
-| 实时推送    | SSE 推送 Agent 流水线进度                                                         |
+| 职责域      | 说明                                                                                         |
+| ----------- | -------------------------------------------------------------------------------------------- | -------------- |
+| 用户管理    | 注册、登录、密码重置、JWT 鉴权                                                               |
+| 小说管理    | 导入（txt/docx/md ≤20MB）、章节识别（五级兜底）、文本分片存储                                |
+| AI 剧本生成 | 7 Agent 流水线（含忠实度校验）：分析→角色提取→情节提取→场景规划→剧本生成→YAML校验→忠实度校验 | 润色为独立队列 |
+| 剧本编辑    | CRUD、版本历史、Schema 校验、回滚                                                            |
+| 导出服务    | yaml/json/md/txt 直接下载，PDF 双方案（Puppeteer 正式 / 前端 jsPDF 快速）                    |
+| 文件管理    | MinIO 存储，生命周期管理（原文+中间 30d，最终剧本永久）                                      |
+| 任务调度    | BullMQ 队列，运行 1 / 排队 3，支持断点重试                                                   |
+| 实时推送    | SSE 推送 Agent 流水线进度                                                                    |
 
 ---
 
@@ -54,18 +54,18 @@
 
 ## 三、业务模块
 
-| 模块        | 路径前缀                  | 职责                                           |
-| ----------- | ------------------------- | ---------------------------------------------- |
-| **Auth**    | `/api/auth`               | 注册、登录、密码重置、账号检查、JWT 签发与验证 |
-| **User**    | `/api/users`              | 用户信息管理、存储配额查询                     |
-| **Novel**   | `/api/novels`             | 小说导入、章节识别、文本分片、原文存储         |
-| **Task**    | `/api/tasks`              | 分析任务创建、列表、详情、SSE 进度、重试       |
-| **Script**  | `/api/scripts`            | 剧本 CRUD、版本历史、回滚                      |
-| **Export**  | `/api/scripts/:id/export` | 多格式导出（yaml/json/md/txt/pdf）             |
-| **Polish**  | `/api/scripts/:id/polish` | AI 润色（7 种风格可选）                        |
-| **Schema**  | `/api/schema`             | YAML Schema 定义文档                           |
-| **AI**      | 内部模块                  | LangChain Agent 编排（8 Agent 流水线）         |
-| **Storage** | 内部模块                  | MinIO 文件上传/下载/生命周期管理               |
+| 模块        | 路径前缀                  | 职责                                                 |
+| ----------- | ------------------------- | ---------------------------------------------------- |
+| **Auth**    | `/api/auth`               | 注册、登录、密码重置、账号检查、JWT 签发与验证       |
+| **User**    | `/api/users`              | 用户信息管理、存储配额查询                           |
+| **Novel**   | `/api/novels`             | 小说导入、章节识别、文本分片、原文存储               |
+| **Task**    | `/api/tasks`              | 分析任务创建、列表、详情、SSE 进度、重试             |
+| **Script**  | `/api/scripts`            | 剧本 CRUD、版本历史、回滚                            |
+| **Export**  | `/api/scripts/:id/export` | 多格式导出（yaml/json/md/txt/pdf）                   |
+| **Polish**  | `/api/scripts/:id/polish` | AI 润色（7 种风格可选）                              |
+| **Schema**  | `/api/schema`             | YAML Schema 定义文档                                 |
+| **AI**      | 内部模块                  | LangChain Agent 编排（7 Agent 流水线，含忠实度校验） |
+| **Storage** | 内部模块                  | MinIO 文件上传/下载/生命周期管理                     |
 
 ---
 
@@ -228,7 +228,7 @@ server/
 │   │   │
 │   │   └── ai/
 │   │       ├── ai.service.ts            # AI 编排服务
-│   │       ├── agent-pipeline.ts        # 8 Agent 流水线编排
+│   │       ├── agent-pipeline.ts        # 7 Agent 流水线编排 (含忠实度校验)
 │   │       ├── agents/
 │   │       │   ├── novel-analysis.agent.ts
 │   │       │   ├── character-extraction.agent.ts
@@ -361,12 +361,12 @@ Cache-Aside
 
 ### 队列定义
 
-| 队列名              | 用途               | 并发 | 重试           |
-| ------------------- | ------------------ | ---- | -------------- |
-| `script-generation` | 8 Agent 流水线执行 | 1    | 3 次, 指数退避 |
-| `script-polish`     | AI 润色任务        | 1    | 2 次           |
-| `export-pdf`        | Puppeteer PDF 导出 | 2    | 2 次           |
-| `cleanup`           | 30 天过期文件清理  | 1    | 1 次           |
+| 队列名              | 用途                              | 并发 | 重试           |
+| ------------------- | --------------------------------- | ---- | -------------- |
+| `script-generation` | 7 Agent 流水线执行 (含忠实度校验) | 1    | 3 次, 指数退避 |
+| `script-polish`     | AI 润色任务                       | 1    | 2 次           |
+| `export-pdf`        | Puppeteer PDF 导出                | 2    | 2 次           |
+| `cleanup`           | 30 天过期文件清理                 | 1    | 1 次           |
 
 ### Job 定义
 
@@ -787,7 +787,7 @@ CMD ["node", "dist/main.js"]
 4. 实现 Novel 模块 (multer 上传 + 章节识别)
 5. 实现 Task 模块 (CRUD + SSE)
 6. 实现 Script 模块 (CRUD + 版本 + 回滚)
-7. 实现 AI Pipeline (LangChain 8 Agent)
+7. 实现 AI Pipeline (LangChain 7 Agent, 含忠实度校验)
 8. 实现 Export 模块 (yaml/json/md/txt/pdf)
 9. 实现 Polish 模块 (7 风格润色)
 10. 实现 Schema 模块
