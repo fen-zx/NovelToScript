@@ -329,14 +329,19 @@ function yamlToPreview(yaml: string): string {
     <!-- Version Dialog -->
     <el-dialog v-model="versionsVisible" title="版本历史" width="500px">
       <el-table :data="versions" v-loading="loadingVersions" size="small">
-        <el-table-column prop="versionNumber" label="版本" width="60" />
-        <el-table-column prop="note" label="备注" />
-        <el-table-column label="时间" width="160">
+        <el-table-column
+          prop="versionNumber"
+          label="版本"
+          width="60"
+          align="center"
+        />
+        <el-table-column prop="note" label="备注" align="center" />
+        <el-table-column label="时间" width="160" align="center">
           <template #default="{ row }">{{
             new Date(row.createdAt).toLocaleString()
           }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="80">
+        <el-table-column label="操作" width="80" align="center">
           <template #default="{ row }"
             ><el-button
               text

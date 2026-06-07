@@ -6,8 +6,8 @@
 
 ## 待开始
 
-- [ ] **T-067** 7 风格润色端到端测试（需 DeepSeek API Key）
-- [ ] **T-068** 多格式导出端到端验证（yaml/json/md/txt/pdf）
+- [ ] **T-067** 7 风格润色端到端测试（`scripts/verify-e2e.ts`，需 DeepSeek API Key + 运行中服务）
+- [ ] **T-068** 多格式导出端到端验证（`scripts/verify-e2e.ts`，需 scriptId + token）
 
 ---
 

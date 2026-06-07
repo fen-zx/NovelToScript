@@ -70,7 +70,7 @@ export class TaskService {
     const t = task as any
     return {
       ...task,
-      scriptId: t.novel?.script?.[0]?.id ?? null,
+      scriptId: t.novel?.scripts?.[0]?.id ?? null,
       novelTitle: t.novel?.title ?? "未知",
     }
   }

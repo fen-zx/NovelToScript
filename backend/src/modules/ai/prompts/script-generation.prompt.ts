@@ -14,6 +14,11 @@ metadata:
   adaptedBy: AI
   genre: 类型
   totalScenes: N
+characters:
+  - name: 角色名
+    role: PROTAGONIST
+    description: 50-100字描述
+    traits: [特征1]
 scenes:
   - sceneNumber: 1
     location: 地点
@@ -30,6 +35,7 @@ scenes:
 
 ## 要求
 对白符合作格，保留核心冲突和情感张力，每场景不少于3段对白。对白应尽可能从原文参考中提取原文对话。
+characters 必须从下面提供的人物信息中提取，role 取值为 PROTAGONIST/ANTAGONIST/SUPPORTING/MINOR。
 
 ## 场景规划
 {scenes}
