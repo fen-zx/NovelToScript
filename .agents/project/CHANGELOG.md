@@ -1,5 +1,29 @@
 # CHANGELOG — 变更记录
 
+## 2026-06-07
+
+### 📄 YAML Schema 文档 — 剧本结构规范定义
+
+- **内容**: 新增 `docs/core/YAML_SCHEMA.md`，完整定义剧本 YAML 结构规范
+- **涵盖**: 4 顶级字段 (title/metadata/characters/scenes)、12 emotion 枚举、9 mood 枚举、13 genre 枚举、4 role 枚举
+- **校验规则**: 21 条结构/元数据/角色/场景/对白校验规则，分级 error/warning
+- **设计原因**: 详述 YAML 选型、三层结构、场景为核心单元、action/emotion 字段、stageDirections 数组、characters 前置、枚举值定量的设计理由
+- **扩展性**: SemVer 版本策略、预留扩展点、数据库映射
+- **影响**: docs/core/YAML_SCHEMA.md (新增)
+- **级别**: minor
+
+### 📁 文档结构重组
+
+- **内容**: `docs/prem/` → `docs/core/`（核心设计 10 文档）+ `docs/temp/`（中间产物 6 文档）；CHANGELOG/DECISIONS 归入 `.agents/project/`；PROJECT_STATE/TASKS 归入 `.agents/contexts/`
+- **影响**: docs/prem/_ → docs/core/_, docs/temp/_, .agents/_
+- **级别**: minor
+
+### 🗑️ 移除仓库中的 backend/.env.docker
+
+- **内容**: 从 Git 跟踪中移除 `backend/.env.docker`（本地文件保留），防止敏感配置泄露
+- **影响**: backend/.env.docker (git rm --cached)
+- **级别**: patch
+
 ## 2026-06-06
 
 ### � 退出登录修复 — Pinia store 内 useRouter 不可用

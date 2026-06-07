@@ -1,45 +1,46 @@
 # PROJECT_STATE — 项目状态追踪
 
-> 最后更新: 2026-06-06
+> 最后更新: 2026-06-07
 
 ---
 
 ## 整体进度
 
 ```
-进度: 85%  █████████████████░░░  前后端代码已生成，Docker 可部署，待前后端联调
+进度: 88%  ██████████████████░░  前后端代码完成，YAML Schema 文档化，待前后端联调
 ```
 
 ### 产物清单
 
 | 产物              | 路径                                 | 状态                                       |
 | ----------------- | ------------------------------------ | ------------------------------------------ |
-| PRD 需求文档      | `docs/prem/PRD.md`                   | ✅ 完成（14 问全部确认）                   |
-| 系统设计          | `docs/prem/DESIGN.md`                | ✅ 完成                                    |
-| 架构决策          | `docs/prem/DECISIONS.md`             | ✅ 完成（14 条 D-001~D-014）               |
-| 页面规格          | `docs/prem/PAGE_SPECS.md`            | ✅ 完成                                    |
-| API 规格          | `docs/prem/API_SPECS.md`             | ✅ 完成（16 个接口）                       |
-| 页面设计          | `docs/prem/PAGE_DESIGN.md`           | ✅ 完成（7 页完整设计）                    |
-| 布局评审          | `docs/prem/LAYOUT_REVIEW.md`         | ✅ 完成（79/100）                          |
-| 低保真原型        | `docs/prem/LOWFI_PROTOTYPE.md`       | ✅ 完成                                    |
+| PRD 需求文档      | `docs/core/PRD.md`                   | ✅ 完成（14 问全部确认）                   |
+| 系统设计          | `docs/temp/DESIGN.md`                | ✅ 完成                                    |
+| 架构决策          | `.agents/project/DECISIONS.md`       | ✅ 完成（14 条 D-001~D-014）               |
+| 页面规格          | `docs/core/PAGE_SPECS.md`            | ✅ 完成                                    |
+| API 规格          | `docs/core/API_SPECS.md`             | ✅ 完成（16 个接口）                       |
+| 页面设计          | `docs/temp/PAGE_DESIGN.md`           | ✅ 完成（7 页完整设计）                    |
+| 布局评审          | `docs/temp/LAYOUT_REVIEW.md`         | ✅ 完成（79/100）                          |
+| 低保真原型        | `docs/temp/LOWFI_PROTOTYPE.md`       | ✅ 完成                                    |
 | HTML 原型         | `prototype/index.html`               | ✅ 完成（毛玻璃风格）                      |
-| 后端架构          | `docs/prem/ARCHITECTURE.md`          | ✅ 完成（18 章节 + 前后端同步）            |
-| Service 层设计    | `docs/prem/SERVICE_SPECS.md`         | ✅ 完成（11 Service + 8 事务点）           |
-| Repository 层设计 | `docs/prem/REPOSITORY_SPECS.md`      | ✅ 完成（9 Repository + 分页规范）         |
-| 队列架构          | `docs/prem/QUEUE_SPECS.md`           | ✅ 完成（4 队列 + 4 Worker）               |
-| AI 工作流         | `docs/prem/AI_WORKFLOW.md`           | ✅ 完成（8 Agent + 三温策略 + 忠实度校验） |
-| 数据库设计        | `docs/prem/DATABASE_SCHEMA.md`       | ✅ 完成（9 表 + 10 索引）                  |
+| 后端架构          | `docs/core/ARCHITECTURE.md`          | ✅ 完成（18 章节 + 前后端同步）            |
+| Service 层设计    | `docs/core/SERVICE_SPECS.md`         | ✅ 完成（11 Service + 8 事务点）           |
+| Repository 层设计 | `docs/core/REPOSITORY_SPECS.md`      | ✅ 完成（9 Repository + 分页规范）         |
+| 队列架构          | `docs/core/QUEUE_SPECS.md`           | ✅ 完成（4 队列 + 4 Worker）               |
+| AI 工作流         | `docs/core/AI_WORKFLOW.md`           | ✅ 完成（8 Agent + 三温策略 + 忠实度校验） |
+| 数据库设计        | `docs/core/DATABASE_SCHEMA.md`       | ✅ 完成（9 表 + 10 索引）                  |
 | Prisma Schema     | `backend/prisma/schema.prisma`       | ✅ 完成（9 表 + 4 枚举 + 迁移）            |
-| 组件方案          | `docs/prem/COMPONENT_SPECS.md`       | ✅ 完成（43 组件）                         |
-| 实现蓝图          | `docs/prem/PAGE_IMPLEMENTATION.md`   | ✅ 完成（7页路由+数据流）                  |
-| 前端架构          | `docs/prem/FRONTEND_ARCHITECTURE.md` | ✅ 完成（16 章节）                         |
+| 组件方案          | `docs/temp/COMPONENT_SPECS.md`       | ✅ 完成（43 组件）                         |
+| 实现蓝图          | `docs/temp/PAGE_IMPLEMENTATION.md`   | ✅ 完成（7页路由+数据流）                  |
+| 前端架构          | `docs/core/FRONTEND_ARCHITECTURE.md` | ✅ 完成（16 章节）                         |
+| **YAML Schema**   | `docs/core/YAML_SCHEMA.md`           | ✅ **新增**（21 校验规则 + 设计原因）      |
 | 前端项目          | `frontend/`                          | ✅ 完成（7 页 + 7 组件 + 3 Store）         |
 | 后端项目          | `backend/`                           | ✅ 完成（66 文件 + 5 模块 + 4 Worker）     |
 | Docker 部署       | `docker-compose.yml`                 | ✅ 完成（3 服务编排 + 健康检查）           |
 | Docker 开发模式   | `docker-compose.dev.yml`             | ✅ 完成（仅 Redis + MinIO）                |
 | TypeScript 编译   | `backend/tsconfig.json`              | ✅ 通过（15 处修复，0 错误）               |
-| CHANGELOG         | `docs/prem/CHANGELOG.md`             | ✅ 完成（2 日完整记录）                    |
-| 任务看板          | `docs/prem/TASKS.md`                 | ✅ 完成（48 任务拆解）                     |
+| CHANGELOG         | `.agents/project/CHANGELOG.md`       | ✅ 完成（3 日完整记录）                    |
+| 任务看板          | `.agents/contexts/TASKS.md`          | ✅ 完成（48 任务拆解）                     |
 
 ---
 
@@ -259,7 +260,28 @@ backend/
 
 ---
 
-## 最新变更摘要 (2026-06-06)
+## 最新变更摘要 (2026-06-07)
+
+### YAML Schema 文档化 (PRD R6)
+
+- 新增 `docs/core/YAML_SCHEMA.md`，完整定义剧本 YAML 结构
+- 4 顶级字段 (title/metadata/characters/scenes)、12 emotion/9 mood/13 genre 枚举
+- 21 条校验规则 + 完整示例 + 7 项设计原因说明
+- SemVer 扩展策略 + 数据库映射表
+
+### 文档结构重组
+
+- `docs/prem/` → `docs/core/`（核心设计文档）+ `docs/temp/`（中间产物）
+- `.agents/project/`：CHANGELOG.md + DECISIONS.md（长期维护）
+- `.agents/contexts/`：PROJECT_STATE.md + TASKS.md（状态追踪）
+
+### 安全性
+
+- 从 Git 仓库移除 `backend/.env.docker`，`.gitignore` 已覆盖
+
+---
+
+## 历史变更摘要 (2026-06-06)
 
 ### Docker 化完善
 
