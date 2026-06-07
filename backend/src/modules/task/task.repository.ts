@@ -20,7 +20,7 @@ export class TaskRepository {
       where: { id },
       include: {
         agentResults: { orderBy: { createdAt: "asc" } },
-        novel: { include: { scripts: { orderBy: { createdAt: "desc" }, take: 1 } } },
+        novel: { include: { scripts: { take: 1 } } },
       },
     })
   }

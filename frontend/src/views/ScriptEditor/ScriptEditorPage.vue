@@ -1,9 +1,10 @@
 <!-- P5 剧本编辑页 -->
 <script setup lang="ts">
-import { ref, onMounted, watch, onUnmounted } from "vue";
+import { ref, onMounted, watch, onUnmounted, computed } from "vue";
 import { useRoute } from "vue-router";
 import { ElMessage } from "element-plus";
 import { scriptApi } from "@/api/scripts";
+import YamlEditor from "@/components/YamlEditor.vue";
 import type { ScriptDetail, VersionSummary } from "@/types/script";
 
 const route = useRoute();
@@ -39,11 +40,13 @@ const validationErrors = ref<
 >([]);
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
+let lastSavedContent = "";
 
 onMounted(async () => {
   try {
     const res = await scriptApi.getById(id);
     content.value = res.data.content;
+    lastSavedContent = res.data.content;
     title.value = res.data.title;
     currentVersion.value = res.data.currentVersion;
   } catch {
@@ -57,19 +60,22 @@ onUnmounted(() => {
   if (saveTimer) clearTimeout(saveTimer);
 });
 
-watch(content, () => {
+// 自动保存：内容变更后 2 秒触发
+watch(content, (newVal) => {
+  if (newVal === lastSavedContent) return;
   saveStatus.value = "unsaved";
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(async () => {
     saveStatus.value = "saving";
     try {
-      const res = await scriptApi.update(id, { content: content.value });
+      const res = await scriptApi.update(id, { content: newVal });
       currentVersion.value = res.data.currentVersion;
+      lastSavedContent = newVal;
       saveStatus.value = "saved";
     } catch {
       saveStatus.value = "unsaved";
     }
-  }, 30000);
+  }, 2000);
 });
 
 async function handleSave() {
@@ -77,6 +83,7 @@ async function handleSave() {
   try {
     const res = await scriptApi.update(id, { content: content.value });
     currentVersion.value = res.data.currentVersion;
+    lastSavedContent = content.value;
     saveStatus.value = "saved";
     ElMessage.success("保存成功");
   } catch {
@@ -91,15 +98,29 @@ function openExport() {
   exportVisible.value = true;
 }
 
-function handleExport() {
-  const ext = exportFormat.value === "json" ? "json" : exportFormat.value === "md" ? "md" : exportFormat.value === "txt" ? "txt" : "yaml";
-  const mime = exportFormat.value === "json" ? "application/json" : "text/plain";
-  const blob = new Blob([content.value], { type: mime });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `${exportFileName.value}.${ext}`;
-  a.click();
-  exportVisible.value = false;
+async function handleExport() {
+  try {
+    const format = exportFormat.value as import("@/types/api").ExportFormat;
+    const res = await scriptApi.export(id, format);
+    // blob 响应直接下载
+    const url = URL.createObjectURL(res as unknown as Blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${exportFileName.value}.${format}`;
+    a.click();
+    URL.revokeObjectURL(url);
+    exportVisible.value = false;
+    ElMessage.success("导出成功");
+  } catch {
+    // 降级：客户端Blob导出
+    const ext = exportFormat.value;
+    const blob = new Blob([content.value], { type: "text/plain" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${exportFileName.value}.${ext}`;
+    a.click();
+    exportVisible.value = false;
+  }
 }
 
 async function handlePolish() {
@@ -263,7 +284,7 @@ function yamlToPreview(yaml: string): string {
 
       <div class="editor-area" :class="viewMode">
         <div v-if="viewMode !== 'preview'" class="editor-pane">
-          <el-input v-model="content" type="textarea" class="yaml-editor" />
+          <YamlEditor v-model="content" />
         </div>
         <div v-if="viewMode !== 'editor'" class="preview-pane">
           <div
@@ -308,14 +329,19 @@ function yamlToPreview(yaml: string): string {
     <!-- Version Dialog -->
     <el-dialog v-model="versionsVisible" title="版本历史" width="500px">
       <el-table :data="versions" v-loading="loadingVersions" size="small">
-        <el-table-column prop="versionNumber" label="版本" width="60" />
-        <el-table-column prop="note" label="备注" />
-        <el-table-column label="时间" width="160">
+        <el-table-column
+          prop="versionNumber"
+          label="版本"
+          width="60"
+          align="center"
+        />
+        <el-table-column prop="note" label="备注" align="center" />
+        <el-table-column label="时间" width="160" align="center">
           <template #default="{ row }">{{
             new Date(row.createdAt).toLocaleString()
           }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="80">
+        <el-table-column label="操作" width="80" align="center">
           <template #default="{ row }"
             ><el-button
               text

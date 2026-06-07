@@ -55,6 +55,24 @@ export const cleanupQueue = new Queue("cleanup", {
 })
 
 // ═══════════════════════════════════════
+// 定时任务注册
+// ═══════════════════════════════════════
+
+/** 注册每日凌晨 3:00 清理过期文件（novels/temp 30天, exports 90天） */
+export async function scheduleCleanupJob(): Promise<void> {
+  // 移除旧的重复任务，创建新的
+  const repeatables = await cleanupQueue.getRepeatableJobs()
+  for (const job of repeatables) {
+    await cleanupQueue.removeRepeatableByKey(job.key)
+  }
+  await cleanupQueue.add("daily-cleanup", {}, {
+    repeat: { pattern: "0 3 * * *" },  // 每天凌晨 3 点
+    jobId: "cleanup-daily",
+  })
+  console.log("[Queue] Cleanup job scheduled: daily at 03:00")
+}
+
+// ═══════════════════════════════════════
 // 并发控制辅助
 // ═══════════════════════════════════════
 

@@ -29,16 +29,18 @@ NovelToScript/
 │       ├── middleware/          # JWT + 错误 + 校验
 │       └── utils/               # 章节识别 + YAML校验 + 日志
 │
-├── docs/prem/                   # 设计文档 (15份)
-│   ├── PRD.md                   # 产品需求
-│   ├── ARCHITECTURE.md          # 后端架构
-│   ├── DATABASE_SCHEMA.md       # 数据库设计
-│   ├── API_SPECS.md             # 16 接口规格
-│   ├── SERVICE_SPECS.md         # Service 层设计
-│   ├── REPOSITORY_SPECS.md      # Repository 层设计
-│   ├── QUEUE_SPECS.md           # BullMQ 队列架构
-│   ├── AI_WORKFLOW.md           # AI 工作流
-│   └── ...
+├── docs/
+│   ├── core/                   # 核心设计文档 (11份)
+│   │   ├── PRD.md              # 产品需求
+│   │   ├── ARCHITECTURE.md     # 后端架构
+│   │   ├── DATABASE_SCHEMA.md  # 数据库设计
+│   │   ├── API_SPECS.md        # 16 接口规格
+│   │   ├── AI_WORKFLOW.md      # AI 工作流
+│   │   ├── YAML_SCHEMA.md      # 剧本 YAML Schema
+│   │   ├── DEPLOYMENT.md       # 部署运维指南
+│   │   └── ...
+│   └── temp/                   # 中间产物 (6份)
+├── .agents/                    # Agent 技能 + 项目管理
 ├── prototype/                   # HTML 交互原型
 └── README.md                    # 本文件
 ```
@@ -154,7 +156,7 @@ npm run dev          # 开发服务器 (端口 5173)
 
 ## 设计文档
 
-完整设计文档见 [`docs/prem/`](docs/prem/)：
+完整设计文档见 [`docs/core/`](docs/core/)：
 
 | 文档               | 内容                        |
 | ------------------ | --------------------------- |
@@ -163,6 +165,8 @@ npm run dev          # 开发服务器 (端口 5173)
 | DATABASE_SCHEMA.md | 数据库设计 (9表)            |
 | API_SPECS.md       | 16 接口完整规格             |
 | AI_WORKFLOW.md     | LangChain + DeepSeek 工作流 |
+| YAML_SCHEMA.md     | 剧本 YAML 结构规范          |
+| DEPLOYMENT.md      | 部署与运维指南              |
 
 ## License
 

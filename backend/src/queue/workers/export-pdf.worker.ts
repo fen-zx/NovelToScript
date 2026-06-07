@@ -4,6 +4,7 @@ import { redisConnection } from "@/shared/queue/queue-manager"
 import { ScriptRepository } from "@/modules/script/script.repository"
 import { VersionRepository } from "@/modules/script/version.repository"
 import { minioClient, storagePaths } from "@/shared/storage/minio"
+import { parseScriptYaml, buildHtml, renderPdf } from "@/utils/pdf-renderer"
 import { logger } from "@/utils/logger"
 
 const scriptRepo = new ScriptRepository()
@@ -20,10 +21,10 @@ export const exportPdfWorker = new Worker(
     const version = await versionRepo.findLatestVersion(scriptId)
     if (!version) throw new Error("No version found")
 
-    // [TODO] Puppeteer PDF 渲染
-    // const html = pdfRenderer.buildHtml({ script, version })
-    // const pdfBuffer = await pdfRenderer.render(html)
-    const pdfBuffer = Buffer.from(`TODO: PDF for ${script.title} v${version.versionNumber}`)
+    // 解析YAML → HTML → PDF
+    const scriptData = parseScriptYaml(version.content)
+    const html = buildHtml(scriptData)
+    const pdfBuffer = await renderPdf(html)
 
     // 上传 MinIO
     const key = storagePaths.export(userId, scriptId, version.versionNumber, "pdf")

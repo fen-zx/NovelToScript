@@ -3,6 +3,7 @@ import { AgentResultRepository } from "./agent-result.repository"
 import { ScriptRepository } from "@/modules/script/script.repository"
 import { Errors } from "@/shared/errors/error-codes"
 import { prisma } from "@/shared/database/prisma"
+import { redis } from "@/shared/cache/redis"
 import { scriptGenerationQueue, isScriptGenQueueFull } from "@/shared/queue/queue-manager"
 
 const AGENT_NAMES = [
@@ -46,23 +47,31 @@ export class TaskService {
   }
 
   async getTaskList(query: { userId: string; status?: string; page?: number; pageSize?: number; sortBy?: any; sortOrder?: any }) {
+    const cacheKey = `task:list:${query.userId}:${query.page || 1}:${query.status || "all"}:${query.sortBy || "createdAt"}`
+    const cached = await redis.get(cacheKey)
+    if (cached) return JSON.parse(cached)
+
     const result = await this.taskRepo.findMany(query)
-    return {
+    const data = {
       ...result,
       list: result.list.map((t: any) => ({
         ...t,
         novelTitle: t.novel?.title ?? "未知",
       })),
     }
+    await redis.setex(cacheKey, 10, JSON.stringify(data)) // 10s TTL
+    return data
   }
 
   async getTaskById(taskId: string) {
     const task = await this.taskRepo.findByIdWithResults(taskId)
     if (!task) throw Errors.taskNotFound()
+    // Prisma include 返回的 relation 字段在严格类型推断下不可见，需要 any 断言
+    const t = task as any
     return {
       ...task,
-      scriptId: task.novel?.scripts?.[0]?.id ?? null,
-      novelTitle: task.novel?.title ?? "未知",
+      scriptId: t.novel?.scripts?.[0]?.id ?? null,
+      novelTitle: t.novel?.title ?? "未知",
     }
   }
 

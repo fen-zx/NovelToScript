@@ -1,11 +1,13 @@
 import type { Response, NextFunction } from "express"
 import { ScriptService } from "./script.service"
 import { PolishService } from "./polish.service"
+import { ExportService } from "./export.service"
 import { VersionRepository } from "./version.repository"
 import type { AuthRequest } from "@/middleware/auth.middleware"
 
 const scriptService = new ScriptService()
 const polishService = new PolishService()
+const exportService = new ExportService()
 const versionRepo = new VersionRepository()
 
 export class ScriptController {
@@ -60,8 +62,18 @@ export class ScriptController {
 
   async export(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      // [TODO] 实现导出逻辑
-      res.json({ code: 0, message: "success", data: null })
+      const { format } = req.query as { format: string }
+      const result = await exportService.exportScript(req.params.id as string, format as any)
+
+      if ("taskId" in result) {
+        // PDF 异步任务
+        res.json({ code: 0, message: "PDF导出任务已入队", data: result })
+      } else {
+        // 同步下载
+        res.setHeader("Content-Type", result.mime)
+        res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(result.fileName)}"`)
+        res.send(result.content)
+      }
     } catch (err) { next(err) }
   }
 }
