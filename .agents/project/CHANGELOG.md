@@ -2,6 +2,22 @@
 
 ## 2026-06-07
 
+### 🤖 Agent 流水线重构 — Iter-3 完成
+
+- **AI Service 重构**: JSON解析增加最多2次重试、统一使用 OutputParser、mergeAnalysis 字段对齐 NovelAnalysis prompt 输出格式（genre/subGenre/themes/narrativeStyle/toneStyle/events）
+- **Token 安全**: 各步骤输入截断（characters≤3K、plotAnalysis≤4K、yaml≤12K），防止超限
+- **Worker 修复**: 进度计算分母 8→7；errorMessage 类型断言修复 TS 编译
+- **影响**: backend/src/modules/ai/ai.service.ts, backend/src/queue/workers/generate-script.worker.ts
+- **级别**: minor
+
+### 📝 Monaco Editor 集成 — Iter-4 完成
+
+- **新增**: `frontend/src/components/YamlEditor.vue` — Monaco Editor 封装（YAML语法高亮、暗色主题、自动布局、v-model双向绑定）
+- **ScriptEditorPage**: `<el-input textarea>` → `<YamlEditor>`；自动保存延迟 30s→2s；保存去重（lastSavedContent 比对）
+- **导出实现**: ExportService 后端5格式（yaml/json/md/txt同步 + pdf异步）；前端优先调API、失败降级客户端Blob
+- **影响**: frontend: 3 files (1 new) | backend: script.controller.ts
+- **级别**: minor
+
 ### � 前后端联调 — Iter-2 完成
 
 - **SSE Redis Pub/Sub**: 新增 `backend/src/shared/queue/sse-pubsub.ts`，Worker 进程通过 Redis 发布 Agent 事件，SSE Handler 订阅并转发给前端 EventSource，替代原有占位实现

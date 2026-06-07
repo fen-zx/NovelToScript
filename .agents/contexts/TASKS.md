@@ -4,26 +4,7 @@
 
 ---
 
-## 待开始 (Iter-3 ~ Iter-5)
-
-### Agent 流水线 (Iter-3)
-
-- [ ] **T-054** DeepSeek API 联调 — NovelAnalysisChain 端到端
-- [ ] **T-055** DeepSeek API 联调 — CharacterExtractionChain
-- [ ] **T-056** DeepSeek API 联调 — PlotAnalysisChain
-- [ ] **T-057** DeepSeek API 联调 — ScenePlanningChain
-- [ ] **T-058** DeepSeek API 联调 — ScriptGenerationChain
-- [ ] **T-059** DeepSeek API 联调 — YamlValidationChain
-- [ ] **T-060** DeepSeek API 联调 — FaithfulnessCheck
-- [ ] **T-061** DeepSeek API 联调 — ScriptPolishChain
-- [ ] **T-062** BullMQ Worker 端到端集成测试
-
-### 剧本编辑器 (Iter-4)
-
-- [ ] **T-063** Monaco Editor 集成（YAML 语法高亮 + Schema 提示）
-- [ ] **T-064** 分屏编辑/预览完善
-- [ ] **T-065** 剧本编辑子组件拆分（SceneCard / DialogueEditor / CharacterPanel）
-- [ ] **T-066** YAML Schema 实时校验（编辑时即时反馈）
+## 待开始 (Iter-5)
 
 ### 润色 + 导出 + 上线 (Iter-5)
 
@@ -131,3 +112,15 @@ _暂无_
 - [x] **T-051** Novel 导入模块联调（移除手动Content-Type、添加Zod校验）
 - [x] **T-052** Task 模块联调（分页/详情/重试/删除 响应格式对齐）
 - [x] **T-053** Script 模块联调（补充novelTitle/novelAuthor、版本/回滚对齐）
+
+### Agent 流水线 (Iter-3)
+
+- [x] **T-054~061** AI Pipeline 重构（JSON重试×2、OutputParser统一、mergeAnalysis修复、Token截断保护）
+- [x] **T-062** Worker 进度计算修正（8→7步）、errorMessage 类型修复
+
+### 剧本编辑器 (Iter-4)
+
+- [x] **T-063** Monaco Editor 集成（YAML语法高亮、暗色主题、自动布局）
+- [x] **T-064** 自动保存优化（30s→2s延迟、防重复保存）
+- [x] **T-065** YamlEditor 组件封装（v-model双向绑定）
+- [x] **T-067** 导出功能后端实现（ExportService yaml/json/md/txt/pdf）

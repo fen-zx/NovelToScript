@@ -7,7 +7,7 @@
 ## 整体进度
 
 ```
-进度: 90%  ██████████████████░  前后端联调完成，SSE Redis Pub/Sub 已打通
+进度: 93%  ██████████████████▌  Iter-2/3/4 完成，Monaco集成，待导出+上线
 ```
 
 ### 产物清单
@@ -254,15 +254,27 @@ backend/
 | ------ | --------------------------------------------------- | ---------- | --------- |
 | Iter-1 | 前后端项目脚手架 + 数据库模型 + Docker 化 + TS 编译 | 2026-06-06 | ✅ 完成   |
 | Iter-2 | 前后端联调 + SSE Redis Pub/Sub 接入                 | 2026-06-07 | ✅ 完成   |
-| Iter-3 | Agent 流水线集成 + DeepSeek API 联调                | TBD        | ⬜ 待开始 |
-| Iter-4 | Monaco Editor 集成 + 剧本编辑页完善                 | TBD        | ⬜ 待开始 |
+| Iter-3 | Agent 流水线集成 + DeepSeek API 联调                | 2026-06-07 | ✅ 完成   |
+| Iter-4 | Monaco Editor 集成 + 剧本编辑页完善                 | 2026-06-07 | ✅ 完成   |
 | Iter-5 | 润色 + 导出 + 性能优化 + 部署上线                   | TBD        | ⬜ 待开始 |
 
 ---
 
 ## 最新变更摘要 (2026-06-07)
 
-### 前后端联调 — Iter-2 完成
+### Agent 流水线重构 (Iter-3)
+
+- AI Service: JSON解析重试机制（最多2次）、OutputParser统一、mergeAnalysis字段对齐prompt输出
+- Worker: 进度计算 8→7 步、errorMessage 类型修复、FaithfulnessCheck 事件发布
+- Token安全: 各步骤输入截断保护（analysis≤4K, characters≤3K, yaml≤12K）
+
+### Monaco Editor 集成 (Iter-4)
+
+- 新增 `YamlEditor.vue` 组件（Monaco + YAML语法高亮 + 暗色主题）
+- ScriptEditorPage: `<textarea>` → `<YamlEditor>`，自动保存 30s→2s，防重复保存
+- 导出: ExportService 后端实现（yaml/json/md/txt 同步 + pdf 异步入队）
+
+### 前后端联调 (Iter-2)
 
 - **SSE Redis Pub/Sub**: 新增 `sse-pubsub.ts`，Worker → Redis → SSE Handler → 前端 EventSource 全链路打通
 - **Auth 模块**: user 数据持久化 localStorage，刷新不丢登录态
