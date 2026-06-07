@@ -3,7 +3,6 @@
 import { ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
-import NotificationCenter from "./NotificationCenter.vue";
 import ThemeToggle from "./ThemeToggle.vue";
 
 const route = useRoute();
@@ -42,12 +41,12 @@ const navItems = [
     </aside>
     <header class="header">
       <div class="header-right">
-        <NotificationCenter />
         <ThemeToggle />
         <div
           class="user-area"
           @mouseenter="showUserMenu = true"
           @mouseleave="showUserMenu = false"
+          @click="showUserMenu = !showUserMenu"
         >
           <span class="user-name">👤</span>
           <Transition name="fade">

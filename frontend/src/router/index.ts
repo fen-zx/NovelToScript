@@ -59,11 +59,10 @@ const router = createRouter({
 })
 
 // AuthGuard
-router.beforeEach((to, _from, next) => {
+router.beforeEach((to) => {
   const token = localStorage.getItem('token')
-  if (to.meta.requiresAuth && !token) return next('/auth')
-  if (to.meta.guest && token) return next('/')
-  next()
+  if (to.meta.requiresAuth && !token) return '/auth'
+  if (to.meta.guest && token) return '/'
 })
 
 export default router
