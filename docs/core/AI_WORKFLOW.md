@@ -1,7 +1,7 @@
 # AI_WORKFLOW — LangChain + DeepSeek AI 工作流
 
 > 基于 PRD Agent定义 + ARCHITECTURE AI工作流 + QUEUE_SPECS 生成
-> LLM: DeepSeek v2 | 框架: LangChain.js 0.3.x | 日期: 2026-06-06
+> LLM: DeepSeek v2 | 框架: LangChain.js 1.x | 日期: 2026-06-07
 
 ---
 

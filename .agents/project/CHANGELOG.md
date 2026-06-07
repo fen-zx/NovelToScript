@@ -2,7 +2,17 @@
 
 ## 2026-06-07
 
-### 🚀 上线准备 — Iter-5 主体完成
+### � 文档一致性更新
+
+- **Prisma 版本**: `DATABASE_SCHEMA.md` 修正 Prisma 5.x → 7.x，对齐 `schema.prisma` 和 `package.json`
+- **LangChain 版本**: `AI_WORKFLOW.md` 修正 LangChain.js 0.3.x → 1.x，对齐 `package.json`
+- **Agent 数量**: `ARCHITECTURE.md`/`QUEUE_SPECS.md`/`SERVICE_SPECS.md`/`PROJECT_STATE.md`/`TASKS.md` 统一为 7 Agent（含忠实度校验），对齐 `ai.service.ts: TOTAL_STEPS = 7`
+- **页面状态**: `PAGE_SPECS.md` 所有页面状态从"未开始"→"容器已生成"，对齐实际代码生成状态
+- **TASKS**: T-018 SSE 标记为 Redis Pub/Sub 已接入；新增 T-072 文档一致性更新任务
+- **影响**: docs/core/ 5 files | .agents/ 3 files
+- **级别**: patch
+
+### �🚀 上线准备 — Iter-5 主体完成
 
 - **PDF 导出**: 新增 `pdf-renderer.ts`（YAML→HTML→PDF），Puppeteer 渲染 + 不可用时 HTML fallback；export-pdf Worker 接入
 - **定时清理**: Cleanup Worker 注册 CRON（每日 03:00），自动清理 novels/temp（30d）+ exports（90d）

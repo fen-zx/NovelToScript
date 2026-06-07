@@ -1,7 +1,7 @@
 # Database Schema — AI小说转剧本工具
 
 > 基于 ARCHITECTURE.md 领域模型 + PRD 实体分析重新生成
-> 数据库: SQLite | ORM: Prisma 5.x | 日期: 2026-06-05
+> 数据库: SQLite | ORM: Prisma 7.x | 日期: 2026-06-07
 
 ---
 

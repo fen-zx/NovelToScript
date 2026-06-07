@@ -34,3 +34,14 @@ export const generationModel = new ChatDeepSeek({
     baseURL: env.DEEPSEEK_BASE_URL,
   },
 })
+
+/** 润色类任务 — 低温高容量，确保完整输出不截断 */
+export const polishModel = new ChatDeepSeek({
+  model: "deepseek-chat",
+  temperature: 0.3,
+  maxTokens: 16384,
+  apiKey: env.DEEPSEEK_API_KEY,
+  configuration: {
+    baseURL: env.DEEPSEEK_BASE_URL,
+  },
+})
