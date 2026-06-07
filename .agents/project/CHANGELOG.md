@@ -2,6 +2,16 @@
 
 ## 2026-06-07
 
+### 🚀 上线准备 — Iter-5 主体完成
+
+- **PDF 导出**: 新增 `pdf-renderer.ts`（YAML→HTML→PDF），Puppeteer 渲染 + 不可用时 HTML fallback；export-pdf Worker 接入
+- **定时清理**: Cleanup Worker 注册 CRON（每日 03:00），自动清理 novels/temp（30d）+ exports（90d）
+- **性能优化**: Task list 增加 Redis 缓存（TTL 10s，按 userId/page/status 分 key）
+- **运维文档**: 新增 `docs/core/DEPLOYMENT.md`（10章节：部署架构/Worker管理/备份/监控/安全/调优）
+- **README**: 更新文档路径 `docs/prem/`→`docs/core/`，新增 YAML_SCHEMA + DEPLOYMENT 链接
+- **影响**: backend: 4 files (1 new) | docs: 2 files (1 new) | README
+- **级别**: minor
+
 ### 🤖 Agent 流水线重构 — Iter-3 完成
 
 - **AI Service 重构**: JSON解析增加最多2次重试、统一使用 OutputParser、mergeAnalysis 字段对齐 NovelAnalysis prompt 输出格式（genre/subGenre/themes/narrativeStyle/toneStyle/events）

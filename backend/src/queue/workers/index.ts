@@ -3,5 +3,8 @@ import "./generate-script.worker"
 import "./polish-script.worker"
 import "./export-pdf.worker"
 import "./cleanup.worker"
+import { scheduleCleanupJob } from "@/shared/queue/queue-manager"
 
-console.log("[Worker] All 4 workers started")
+scheduleCleanupJob().then(() => {
+  console.log("[Worker] All 4 workers + cleanup cron started")
+})

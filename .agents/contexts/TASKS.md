@@ -4,16 +4,10 @@
 
 ---
 
-## 待开始 (Iter-5)
+## 待开始
 
-### 润色 + 导出 + 上线 (Iter-5)
-
-- [ ] **T-067** 7 风格润色端到端测试
-- [ ] **T-068** 多格式导出完善（yaml/json/md/txt/pdf）
-- [ ] **T-069** PDF 导出 Puppeteer 渲染
-- [ ] **T-070** 定时清理 Worker 验证（30 天生命周期）
-- [ ] **T-071** 性能优化（缓存策略 + DB 查询优化）
-- [ ] **T-072** 部署上线 + 运维文档
+- [ ] **T-067** 7 风格润色端到端测试（需 DeepSeek API Key）
+- [ ] **T-068** 多格式导出端到端验证（yaml/json/md/txt/pdf）
 
 ---
 
@@ -23,7 +17,14 @@ _暂无_
 
 ---
 
-## 已完成 (Iter-1: 脚手架 + 全栈代码生成)
+## 已完成 (Iter 1~4 全部 + Iter-5 部分)
+
+### 润色 + 导出 + 基础设施 (Iter-5)
+
+- [x] **T-069** PDF 导出 Puppeteer 渲染（`pdf-renderer.ts` + Worker）
+- [x] **T-070** 定时清理 Worker 验证（CRON 03:00 + MinIO 生命周期）
+- [x] **T-071** 性能优化（Task list Redis 缓存 TTL 10s）
+- [x] 运维文档（`docs/core/DEPLOYMENT.md` 10章节）+ README 路径修正
 
 ### 文档设计
 
