@@ -2,7 +2,17 @@
 
 ## 2026-06-07
 
-### 📄 YAML Schema 文档 — 剧本结构规范定义
+### � 前后端联调 — Iter-2 完成
+
+- **SSE Redis Pub/Sub**: 新增 `backend/src/shared/queue/sse-pubsub.ts`，Worker 进程通过 Redis 发布 Agent 事件，SSE Handler 订阅并转发给前端 EventSource，替代原有占位实现
+- **Auth 联调**: DTO/响应格式对齐；user 信息持久化 localStorage，页面刷新不丢失登录态
+- **Novel 导入联调**: 移除手动的 `Content-Type: multipart/form-data`（axios 自动 boundary）；添加 `validate(ImportNovelBody)` Zod 校验
+- **Script 联调**: `getScriptById` 补充 `novelTitle`/`novelAuthor` 字段，版本列表/回滚响应与前端类型对齐
+- **Task 联调**: 分页 `list/total/page/pageSize` 格式验证通过
+- **影响**: backend: 5 files (+1 new) | frontend: 3 files
+- **级别**: minor
+
+### �📄 YAML Schema 文档 — 剧本结构规范定义
 
 - **内容**: 新增 `docs/core/YAML_SCHEMA.md`，完整定义剧本 YAML 结构规范
 - **涵盖**: 4 顶级字段 (title/metadata/characters/scenes)、12 emotion 枚举、9 mood 枚举、13 genre 枚举、4 role 枚举

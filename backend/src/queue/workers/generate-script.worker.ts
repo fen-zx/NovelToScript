@@ -11,6 +11,7 @@ import { DialogueRepository } from "@/modules/script/dialogue.repository"
 import { VersionRepository } from "@/modules/script/version.repository"
 import { AIService } from "@/modules/ai/ai.service"
 import { minioClient, storagePaths } from "@/shared/storage/minio"
+import { publishTaskEvent } from "@/shared/queue/sse-pubsub"
 import { logger } from "@/utils/logger"
 
 const taskRepo = new TaskRepository()
@@ -56,6 +57,7 @@ export const generateScriptWorker = new Worker(
         logger.info(`[Worker] Agent start: ${agent}`)
         await taskRepo.update(taskId, { currentAgent: agent })
         await agentResultRepo.update(taskId, agent, { status: "RUNNING", startedAt: new Date() })
+        await publishTaskEvent({ type: "agent:start", taskId, agent, message: `${agent} 开始执行` })
       })
 
       pipeline.on("agent-done", async (agent, output) => {
@@ -63,7 +65,13 @@ export const generateScriptWorker = new Worker(
         await agentResultRepo.update(taskId, agent, {
           status: "DONE", output: JSON.stringify(output), completedAt: new Date(),
         })
-        await taskRepo.update(taskId, { progress: (pipeline.currentStep / 8) })
+        const progress = pipeline.currentStep / 8
+        await taskRepo.update(taskId, { progress })
+        await publishTaskEvent({
+          type: "agent:done", taskId, agent,
+          summary: typeof output === "string" ? output.slice(0, 100) : JSON.stringify(output).slice(0, 100),
+          percent: Math.round(progress * 100),
+        })
       })
 
       logger.info(`[Worker] Starting AI pipeline for task ${taskId}`)
@@ -111,12 +119,15 @@ export const generateScriptWorker = new Worker(
         } : {}),
       })
 
+      await publishTaskEvent({ type: "task:complete", taskId, scriptId: script.id })
+
       return { scriptId: script.id }
     } catch (err: any) {
       logger.error(`[Worker] Task ${taskId} failed: ${err.message}`)
       await taskRepo.update(taskId, {
         status: "FAILED", errorMessage: err.message, completedAt: new Date(),
       })
+      await publishTaskEvent({ type: "task:failed", taskId, error: err.message })
       throw err
     }
   },

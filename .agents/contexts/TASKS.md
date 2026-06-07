@@ -4,15 +4,7 @@
 
 ---
 
-## 待开始 (Iter-2 ~ Iter-5)
-
-### 前后端联调 (Iter-2)
-
-- [ ] **T-049** A5 SSE Redis Pub/Sub 接入（后端占位 → 真实推送）
-- [ ] **T-050** Auth 模块前后端联调（注册/登录/重置/查重）
-- [ ] **T-051** Novel 导入模块前后端联调（上传 + 章节识别）
-- [ ] **T-052** Task 模块前后端联调（创建/列表/详情/重试/删除）
-- [ ] **T-053** Script 模块前后端联调（获取/更新/版本/回滚/导出）
+## 待开始 (Iter-3 ~ Iter-5)
 
 ### Agent 流水线 (Iter-3)
 
@@ -131,3 +123,11 @@ _暂无_
 ### 安全性
 
 - [x] 从 Git 仓库移除 `backend/.env.docker`，`.gitignore` 已覆盖
+
+### 前后端联调 (Iter-2)
+
+- [x] **T-049** A5 SSE Redis Pub/Sub 接入（`sse-pubsub.ts` + Worker发布 + SSE Handler订阅）
+- [x] **T-050** Auth 模块联调（DTO/响应格式对齐、user 持久化 localStorage）
+- [x] **T-051** Novel 导入模块联调（移除手动Content-Type、添加Zod校验）
+- [x] **T-052** Task 模块联调（分页/详情/重试/删除 响应格式对齐）
+- [x] **T-053** Script 模块联调（补充novelTitle/novelAuthor、版本/回滚对齐）

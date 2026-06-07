@@ -1,6 +1,7 @@
 import { ScriptRepository } from "./script.repository"
 import { VersionRepository } from "./version.repository"
 import { CharacterRepository } from "./character.repository"
+import { NovelRepository } from "@/modules/novel/novel.repository"
 import { Errors } from "@/shared/errors/error-codes"
 
 export class ScriptService {
@@ -8,6 +9,7 @@ export class ScriptService {
     private scriptRepo = new ScriptRepository(),
     private versionRepo = new VersionRepository(),
     private characterRepo = new CharacterRepository(),
+    private novelRepo = new NovelRepository(),
   ) {}
 
   async getScriptById(scriptId: string) {
@@ -16,6 +18,7 @@ export class ScriptService {
 
     const latestVersion = script.versions[0]
     const characters = script.characters
+    const novel = await this.novelRepo.findById(script.novelId)
 
     return {
       id: script.id, userId: script.userId, novelId: script.novelId,
@@ -25,6 +28,8 @@ export class ScriptService {
         id: c.id, name: c.name, role: c.role,
         description: c.description, traits: c.traits ? JSON.parse(c.traits) : null,
       })),
+      novelTitle: novel?.title ?? "未知",
+      novelAuthor: novel?.author ?? null,
       createdAt: script.createdAt.toISOString(),
       updatedAt: script.updatedAt.toISOString(),
     }

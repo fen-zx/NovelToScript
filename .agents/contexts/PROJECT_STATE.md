@@ -7,7 +7,7 @@
 ## 整体进度
 
 ```
-进度: 88%  ██████████████████░░  前后端代码完成，YAML Schema 文档化，待前后端联调
+进度: 90%  ██████████████████░  前后端联调完成，SSE Redis Pub/Sub 已打通
 ```
 
 ### 产物清单
@@ -90,7 +90,7 @@
 | A2 POST /api/tasks                   | 🟢 前后端已完成     |
 | A3 GET /api/tasks                    | 🟢 前后端已完成     |
 | A4 GET /api/tasks/:id                | 🟢 前后端已完成     |
-| A5 GET /api/tasks/:id/stream         | 🟡 后端占位，待联调 |
+| A5 GET /api/tasks/:id/stream         | � SSE Redis Pub/Sub |
 | A6 GET /api/scripts/:id              | 🟢 前后端已完成     |
 | A7 PUT /api/scripts/:id              | 🟢 前后端已完成     |
 | A8 POST /api/scripts/:id/polish      | 🟢 前后端已完成     |
@@ -253,7 +253,7 @@ backend/
 | 迭代   | 目标                                                | 日期       | 状态      |
 | ------ | --------------------------------------------------- | ---------- | --------- |
 | Iter-1 | 前后端项目脚手架 + 数据库模型 + Docker 化 + TS 编译 | 2026-06-06 | ✅ 完成   |
-| Iter-2 | 前后端联调 + SSE Redis Pub/Sub 接入                 | TBD        | ⬜ 待开始 |
+| Iter-2 | 前后端联调 + SSE Redis Pub/Sub 接入                 | 2026-06-07 | ✅ 完成   |
 | Iter-3 | Agent 流水线集成 + DeepSeek API 联调                | TBD        | ⬜ 待开始 |
 | Iter-4 | Monaco Editor 集成 + 剧本编辑页完善                 | TBD        | ⬜ 待开始 |
 | Iter-5 | 润色 + 导出 + 性能优化 + 部署上线                   | TBD        | ⬜ 待开始 |
@@ -261,6 +261,15 @@ backend/
 ---
 
 ## 最新变更摘要 (2026-06-07)
+
+### 前后端联调 — Iter-2 完成
+
+- **SSE Redis Pub/Sub**: 新增 `sse-pubsub.ts`，Worker → Redis → SSE Handler → 前端 EventSource 全链路打通
+- **Auth 模块**: user 数据持久化 localStorage，刷新不丢登录态
+- **Novel 导入**: 移除手动 Content-Type（axios auto boundary）、添加 Zod validate(ImportNovelBody)
+- **Script 模块**: getScriptById 补充 novelTitle/novelAuthor，版本/回滚响应对齐前端类型
+- **Task 模块**: 分页/详情/重试 响应格式校验通过
+- 后端 +7/-1 文件，前端 3 文件修改，TS 编译 0 新增错误
 
 ### YAML Schema 文档化 (PRD R6)
 
