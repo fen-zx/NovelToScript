@@ -336,3 +336,43 @@ h2 {
   color: #e17055;
 }
 </style>
+
+<style>
+/* 暗色模式覆盖 */
+html.dark .auth-page {
+  background: linear-gradient(
+    135deg,
+    #1a1a2e 0%,
+    #16213e 30%,
+    #0f3460 60%,
+    #1a1a2e 100%
+  );
+}
+html.dark .login-card {
+  background: rgba(30, 30, 50, 0.75);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+html.dark .sub {
+  color: #999;
+}
+html.dark .tabs {
+  border-bottom-color: #333;
+}
+html.dark .tabs span {
+  color: #888;
+}
+html.dark .tabs span.active {
+  color: #a78bfa;
+  border-bottom-color: #a78bfa;
+}
+html.dark .link {
+  color: #888;
+}
+html.dark .link:hover {
+  color: #a78bfa;
+}
+html.dark .checking {
+  color: #888;
+}
+</style>
